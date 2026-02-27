@@ -119,22 +119,23 @@ similarities = sim("hedge", "hog", ['jaccard','dice','jaro'])
 
 ### Edit Distance & Alignment
 
-| Metric             | Description                |
-| ------------------ | -------------------------- |
-| `levenshtein`      | Minimum edit distance      |
-| `needleman_wunsch` | Global alignment           |
-| `smith_waterman`   | Local alignment            |
-| `lcs`              | Longest common subsequence |
-| `jaro`             | Jaro string similarity     |
-| `jarowinkler`      | Prefix-weighted Jaro       |
+| Metric              | Description                |
+| ------------------- | -------------------------- |
+| `levenshtein`       | Minimum edit distance      |
+| `needleman_wunsch`  | Global alignment           |
+| `smith_waterman`    | Local alignment            |
+| `lcs`               | Longest common subsequence |
+| `jaro`              | Jaro string similarity     |
+| `jaro_winkler`      | Prefix-weighted Jaro       |
+| `monge-elkan`       |                            |
 
 ---
 
 ### Abundance Metrics
 
-| Metric       | Description                         |
-| ------------ | ----------------------------------- |
-| `braycurtis` | Abundance-based ecological distance |
+| Metric        | Description                         |
+| ------------- | ----------------------------------- |
+| `bray_curtis` | Abundance-based ecological distance |
 
 ---
 
@@ -216,6 +217,7 @@ Similarity
 
 Difference
 ├── Levenshtein
+├── Monge-Elkan
 ├── Hamming
 └── Overlap variants
 
@@ -225,7 +227,8 @@ Distance
 │   ├── Euclidean (p=2)
 │   ├── Manhattan (p=1)
 │   └── Chebyshev (p=∞)
-└── Bray-Curtis
+├── Bray-Curtis
+└── Canberra
 
 
 Alignment

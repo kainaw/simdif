@@ -5,14 +5,16 @@ simdif (and dist, and score, and trace...)
 import numbers
 import sys
 
+
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
 
-VALID_PREFIXES = {'sim', 'dif', 'dist', 'score', 'trace'}
+VALID_PREFIXES = {'sim', 'dif', 'dist', 'score', 'trace','matrix'}
+
 
 def _resolve_metric(name: str):
-    name = name.lower()
+    name = name.lower().replace('-','_')
     if '_' in name:
         prefix, base = name.split('_', 1)
         if prefix in VALID_PREFIXES:
@@ -26,16 +28,18 @@ def _resolve_metric(name: str):
     role = entry['default']
     return role, entry[role], name
 
+
 def simdif(a, b, metric, **kwargs):
     if isinstance(metric, (list, tuple, set)):
         return {m: simdif(a, b, m, **kwargs) for m in metric}
     role, func, base = _resolve_metric(metric)
     return func(a, b, **kwargs)
 
+
 def sim(a, b, metric, **kwargs):
     if isinstance(metric, (list, tuple, set)):
         return {m: sim(a, b, m, **kwargs) for m in metric}
-    role, func, base = _resolve_metric(metric)
+    role, func, base = _resolve_metric("sim_"+metric)
     if role != 'sim':
         raise ValueError(f"Metric '{metric}' is a '{role}', not a similarity metric")
     return func(a, b, **kwargs)
@@ -44,7 +48,7 @@ def sim(a, b, metric, **kwargs):
 def dif(a, b, metric, **kwargs):
     if isinstance(metric, (list, tuple, set)):
         return {m: dif(a, b, m, **kwargs) for m in metric}
-    role, func, base = _resolve_metric(metric)
+    role, func, base = _resolve_metric("dif_"+metric)
     if role != 'dif':
         raise ValueError(f"Metric '{metric}' is a '{role}', not a difference metric")
     return func(a, b, **kwargs)
@@ -53,7 +57,7 @@ def dif(a, b, metric, **kwargs):
 def dist(a, b, metric, **kwargs):
     if isinstance(metric, (list, tuple, set)):
         return {m: dist(a, b, m, **kwargs) for m in metric}
-    role, func, base = _resolve_metric(metric)
+    role, func, base = _resolve_metric("dist_"+metric)
     if role != 'dist':
         raise ValueError(f"Metric '{metric}' is a '{role}', not a distance metric")
     return func(a, b, **kwargs)
@@ -62,7 +66,7 @@ def dist(a, b, metric, **kwargs):
 def score(a, b, metric, **kwargs):
     if isinstance(metric, (list, tuple, set)):
         return {m: score(a, b, m, **kwargs) for m in metric}
-    role, func, base = _resolve_metric(metric)
+    role, func, base = _resolve_metric("score_"+metric)
     if role != 'score':
         raise ValueError(f"Metric '{metric}' is a '{role}', not a scoring metric")
     return func(a, b, **kwargs)
@@ -71,10 +75,20 @@ def score(a, b, metric, **kwargs):
 def trace(a, b, metric, **kwargs):
     if isinstance(metric, (list, tuple, set)):
         return {m: trace(a, b, m, **kwargs) for m in metric}
-    role, func, base = _resolve_metric(metric)
+    role, func, base = _resolve_metric("trace_"+metric)
     if role != 'trace':
         raise ValueError(f"Metric '{metric}' is a '{role}', not a trace metric")
     return func(a, b, **kwargs)
+
+
+def matrix(a, b, metric, **kwargs):
+    if isinstance(metric, (list, tuple, set)):
+        return {m: matrix(a, b, m, **kwargs) for m in metric}
+    role, func, base = _resolve_metric("matrix_"+metric)
+    if role != 'matrix':
+        raise ValueError(f"Metric '{metric}' is a '{role}', not a trace metric")
+    return func(a, b, **kwargs)
+
 
 # ------------------------------------------------------------------
 # Utilities
@@ -116,7 +130,7 @@ def _make_hashable(x):
     return x
     
 def to_set(val):
-    if val == None:
+    if val is None:
         return set()
     if isinstance(val, set):
         return val
@@ -140,6 +154,13 @@ def to_binary(val, width=None) -> list:
     if width is not None:
         bits = bits.zfill(width)
     return [int(b) for b in bits]
+
+def to_tokens(val):
+    if val is None:
+        return []
+    if isinstance(val, (str, bytes)):
+        return val.split()
+    return to_list(val)
 
 # ------------------------------------------------------------------
 # Set Metrics
@@ -278,6 +299,9 @@ def sim_cosine(a, b) -> float:
         raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
     if len(a) == 0 and len(b) == 0:
         return 1.0
+    if 'scipy' in sys.modules:
+        from scipy.spatial import distance
+        return 1.0 - float(distance.cosine(a, b))
     dot = sum(x * y for x, y in zip(a, b))
     norm_a = sum(x * x for x in a) ** 0.5
     norm_b = sum(y * y for y in b) ** 0.5
@@ -285,11 +309,15 @@ def sim_cosine(a, b) -> float:
         return 1.0
     if norm_a == 0 or norm_b == 0:
         return 0.0
-    return dot / (norm_a * norm_b)
+    res = dot / (norm_a * norm_b)
+    return max(-1.0, min(1.0, res))
 
 def dif_cosine(a, b) -> float:
     sim = sim_cosine(a, b)
     return -1 - sim if sim < 0 else 1 - sim
+
+def dist_cosine(a, b) -> float:
+    return 1 - sim_cosine(a, b)
 
 def dist_hamming(a, b, binary=False) -> int:
     if binary:
@@ -348,6 +376,9 @@ def dist_minkowski(a, b, p=None) -> float:
     a, b = to_list_numeric(a), to_list_numeric(b)
     if len(a) != len(b):
         raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
+    if 'scipy' in sys.modules:
+        from scipy.spatial import distance
+        return float(distance.minkowski(a, b, p))
     return sum(abs(x - y) ** p for x, y in zip(a, b)) ** (1/p)
 
 dist_euclidean = lambda a, b: dist_minkowski(a, b, p=2)
@@ -362,6 +393,17 @@ def dist_chebyshev(a, b) -> float:
     
 dist_chessboard = dist_chebyshev
 dist_linf = dist_chebyshev
+
+def dist_canberra(a, b) -> float:
+    a, b = to_list_numeric(a), to_list_numeric(b)
+    if len(a) != len(b): 
+        raise ValueError("Length mismatch")
+    score = 0.0
+    for x, y in zip(a, b):
+        denominator = abs(x) + abs(y)
+        if denominator > 0:
+            score += abs(x - y) / denominator
+    return score
 
 # ------------------------------------------------------------------
 # Edit Distance Metrics
@@ -406,6 +448,8 @@ def dist_levenshtein(a, b) -> int:
     int
         The edit distance between the two sequences.
     """
+    if isinstance(a, str) and isinstance(b, str) and 'Levenshtein' in sys.modules:
+        return float(sys.modules['Levenshtein'].distance(a, b))
     s1, s2 = to_list(a), to_list(b)
     matrix = _dp_matrix(s1, s2, match_score=0, mismatch_penalty=1, gap_penalty=1, local=False, maximize=False)
     return matrix[-1][-1]
@@ -425,6 +469,17 @@ def score_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-
 
 score_smith = score_smith_waterman
 score_waterman = score_smith_waterman
+
+def sim_monge_elkan(a, b, method="jaro_winkler") -> float:
+    tokens_a = to_tokens(a)
+    tokens_b = to_tokens(b)
+    if not tokens_a or not tokens_b:
+        return 0.0
+    total_score = 0.0
+    for s in tokens_a:
+        best_match = max(sim(s, t, method) for t in tokens_b)
+        total_score += best_match
+    return total_score / len(tokens_a)
 
 def sim_levenshtein(a, b) -> float:
     s1 = to_list(a)
@@ -497,6 +552,29 @@ def trace_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-
     matrix = _dp_matrix(s1, s2, match_score, mismatch_penalty, gap_penalty, local=True, maximize=True)
     return _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local=True, gap_symbol=gap_symbol)
 
+def _fill_dp_matrix(a, b, match_score, mismatch_penalty, gap_penalty, local, maximize):
+    s1 = to_list(a)
+    s2 = to_list(b)
+    matrix = _dp_matrix(s1, s2, match_score, mismatch_penalty, gap_penalty, local, maximize)
+    header_row = [" ", " "] + [str(x) for x in s2]
+    side_labels = [" ", " "] + [str(x) for x in s1]
+    for i, row in enumerate(matrix):
+        row.insert(0, side_labels[i+1])
+    matrix.insert(0, header_row)
+    return matrix
+
+def matrix_levenshtein(a, b):
+    return _fill_dp_matrix(a, b, match_score=0, mismatch_penalty=1, gap_penalty=1, local=False, maximize=False)
+
+def matrix_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-1):
+    return _fill_dp_matrix(a, b, match_score, mismatch_penalty, gap_penalty, local=True, maximize=True)
+
+def matrix_needleman_wunsch(a, b, match_score=1, mismatch_penalty=-1, gap_penalty=-1):
+    return _fill_dp_matrix(a, b, match_score, mismatch_penalty, gap_penalty, local=False, maximize=True)
+
+def matrix_lcs(a, b):
+    return _fill_dp_matrix(a, b, match_score=1, mismatch_penalty=0, gap_penalty=0, local=False, maximize=True)
+
 # ------------------------------------------------------------------
 # Sequence metrics
 # ------------------------------------------------------------------
@@ -543,7 +621,7 @@ def sim_jaro(a, b) -> float:
             
     return (matches/len1 + matches/len2 + (matches - transpositions/2)/matches) / 3
 
-def sim_jarowinkler(a, b, p=0.1, max_l=4) -> float:
+def sim_jaro_winkler(a, b, p=0.1, max_l=4) -> float:
     s1, s2 = to_list(a), to_list(b)
     j = sim_jaro(s1, s2)
     l = 0
@@ -556,13 +634,37 @@ def sim_jarowinkler(a, b, p=0.1, max_l=4) -> float:
 # Frequency/Abundance Metrics (for Dicts or Counters)
 # ------------------------------------------------------------------
 
-def dist_braycurtis(a, b) -> float:
+def dist_bray_curtis(a, b) -> float:
     v1, v2 = to_list_numeric(a), to_list_numeric(b)
     if len(v1) != len(v2):
         raise ValueError("Vector length mismatch")
+    
     diff_sum = sum(abs(x - y) for x, y in zip(v1, v2))
-    total_sum = sum(x + y for x, y in zip(v1, v2))
+    total_sum = sum(abs(x + y) for x, y in zip(v1, v2))
+    
     return diff_sum / total_sum if total_sum != 0 else 0.0
+
+# ------------------------------------------------------------------
+# Because yes, why not?
+# ------------------------------------------------------------------
+
+def dif_hedgehog(a, b):
+    a = list_numeric(a)
+    b = list_numeric(b)
+    d = 0.0
+    for i, x in enumerate(a):
+        for j, y in enumerate(b):
+            xi = -x if i % 2 == 1 else x
+            yj = -y if j % 2 == 1 else y
+            d += abs(xi - yj)
+
+    return d / (1.0 + d)
+
+def sim_hedgehog(a, b):
+    return 1 - dif_hedgehog(a, b)
+
+def dist_hedgehog(a, b):
+    return 0.0 # Hedgehogs always go together perfectly
 
 # ------------------------------------------------------------------
 # Metric Registry
@@ -609,6 +711,7 @@ METRICS = {
         'default': 'sim',
         'sim': sim_cosine,
         'dif': dif_cosine,
+        'dist': dist_cosine,
     },
     'hamming': {
         'default': 'dist',
@@ -638,30 +741,43 @@ METRICS = {
         'default': 'dist',
         'dist': dist_chebyshev,
     },
+    'canberra': {
+        'default':'dist',
+        'dist': dist_canberra,
+    },
 
     'levenshtein': {
         'default': 'dist',
         'dist': dist_levenshtein,
         'sim': sim_levenshtein,
         'dif': dif_levenshtein,
+        'matrix': matrix_levenshtein,
     },
 
     'needleman_wunsch': {
         'default': 'score',
         'score': score_needleman_wunsch,
         'trace': trace_needleman_wunsch,
+        'matrix': matrix_needleman_wunsch,
     },
 
     'smith_waterman': {
         'default': 'score',
         'score': score_smith_waterman,
         'trace': trace_smith_waterman,
+        'matrix': matrix_smith_waterman,
+    },
+    
+    'monge_elkan': {
+        'default': 'sim',
+        'sim': sim_monge_elkan,
     },
 
     'lcs': {
         'default': 'score',
         'score': score_lcs,
         'dist': dist_lcs,
+        'matrix': maxtrix_lcs,
     },
 
     'jaro': {
@@ -669,15 +785,22 @@ METRICS = {
         'sim': sim_jaro,
     },
 
-    'jarowinkler': {
+    'jaro_winkler': {
         'default': 'sim',
-        'sim': sim_jarowinkler,
+        'sim': sim_jaro_winkler,
     },
 
-    'braycurtis': {
+    'bray_curtis': {
         'default': 'dist',
-        'dist': dist_braycurtis,
+        'dist': dist_bray_curtis,
     },
+    
+    'hedgehog': {
+        'default': 'dist',
+        'dist': dist_hedgehog,
+        'dif': dif_hedgehog,
+        'sim': sim_hedgehog,
+    }
 }
 
 

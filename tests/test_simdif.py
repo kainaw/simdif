@@ -113,7 +113,7 @@ def test_sim_jaro_basic():
 
 
 def test_sim_jarowinkler_basic():
-    assert simdif.sim_jarowinkler("MARTHA", "MARHTA") > 0.9
+    assert simdif.sim_jaro_winkler("MARTHA", "MARHTA") > 0.9
 
 
 # ---------------------------------------------------------
@@ -121,8 +121,8 @@ def test_sim_jarowinkler_basic():
 # ---------------------------------------------------------
 
 def test_dist_braycurtis_basic():
-    assert simdif.dist_braycurtis([1, 2], [1, 2]) == 0.0
-    assert simdif.dist_braycurtis([1, 2], [2, 4]) == pytest.approx(1/3)
+    assert simdif.dist_bray_curtis([1, 2], [1, 2]) == 0.0
+    assert simdif.dist_bray_curtis([1, 2], [2, 4]) == pytest.approx(1/3)
 
 
 # ---------------------------------------------------------
@@ -139,11 +139,23 @@ def test_simdif_dispatch_multiple():
     assert "dice" in result
 
 
-def test_sim_dispatch_error():
-    with pytest.raises(ValueError):
-        simdif.sim([1], [1], "levenshtein")  # levenshtein default is dist
+def test_sim_dispatch_auto_resolve():
+    # This should NOT raise ValueError anymore. 
+    # It should correctly route to sim_levenshtein (usually 1 - dist/len)
+    result = simdif.sim("apple", "apple", "levenshtein")
+    assert result == 1.0
 
 
-def test_dist_dispatch_error():
+def test_dist_dispatch_auto_resolve():
+    # This should correctly route to dif_jaccard (usually 1 - sim)
+    result = simdif.dif([1, 2], [1, 2], "jaccard")
+    assert result == 0.0
+
+
+def test_real_errors():
     with pytest.raises(ValueError):
-        simdif.dist([1], [1], "jaccard")  # jaccard default is sim
+        simdif.sim([1], [1], "not_a_real_metric")
+    
+    with pytest.raises(ValueError):
+        # Assuming you haven't built a matrix for Jaccard
+        simdif.matrix([1], [1], "jaccard")
