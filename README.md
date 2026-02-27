@@ -1,8 +1,6 @@
 # simdif
 *A unified similarity, difference, distance, scoring, and alignment library for Python.*
 
-> **Similarity is the shadow two things cast in the same light. 🦔**
-
 ---
 
 ## Overview
@@ -265,3 +263,7 @@ pip install simdif
 ## License
 
 MIT
+
+---
+
+> **Similarity is the shadow two things cast in the same light. 🦔**
