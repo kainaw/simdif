@@ -777,7 +777,7 @@ METRICS = {
         'default': 'score',
         'score': score_lcs,
         'dist': dist_lcs,
-        'matrix': maxtrix_lcs,
+        'matrix': matrix_lcs,
     },
 
     'jaro': {
