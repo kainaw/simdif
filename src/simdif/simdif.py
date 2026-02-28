@@ -24,7 +24,8 @@ License: MIT
 import math
 import numbers
 import sys
-
+import os
+_DEFINITIONS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "definitions.txt")
 
 # ------------------------------------------------------------------
 # Helpers
@@ -219,93 +220,6 @@ def _aleph_counts(a, b, n_universe=0):
 # Set Metrics
 # ------------------------------------------------------------------
 
-def sim_jaccard(a, b) -> float:
-    """
-    Compute the Jaccard similarity between two sets.
-    
-    The Jaccard index is defined as:
-        |A ∩ B| / |A ∪ B|
-    
-    Parameters
-    ----------
-    a : iterable or set
-        First collection of hashable items.
-    b : iterable or set
-        Second collection of hashable items.
-    
-    Returns
-    -------
-    float
-        A value between 0 and 1, where 1 means the sets are identical
-        and 0 means they share no elements.
-    """
-    n00, n01, n10, n11 = _aleph_counts(a, b)
-    if (n11 + n10 + n01) == 0:
-        return 1.0
-    return n11 / (n11 + n10 + n01)
-
-
-def dif_jaccard(a, b) -> float:
-    return 1 - sim_jaccard(a, b)
-    
-def sim_dice_sorensen(a, b) -> float:
-    """
-    Compute the Dice similarity coefficient between two sets.
-    
-    The Dice coefficient is defined as:
-        2|A ∩ B| / (|A| + |B|)
-    
-    Parameters
-    ----------
-    a : iterable or set
-        First collection of items.
-    b : iterable or set
-        Second collection of items.
-    
-    Returns
-    -------
-    float
-        A value between 0 and 1 measuring set overlap.
-    """
-    n00, n01, n10, n11 = _aleph_counts(a, b)
-    if (n11 + n10 + n01) == 0:
-        return 1.0
-    return 2 * n11 / (2 * n11 + n10 + n01)
-
-sim_sorensen_dice = sim_dice_sorensen
-sim_dice = sim_dice_sorensen
-sim_sorensen = sim_dice_sorensen
-
-def dif_dice_sorensen(a, b) -> float:
-    return 1 - sim_dice(a, b)
-
-dif_sorensen_dice = dif_dice_sorensen
-dif_dice = dif_dice_sorensen
-dif_sorensen = dif_dice_sorensen
-
-def sim_overlap(a, b) -> float:
-    a, b = to_set(a), to_set(b)
-    if len(a) == 0 and len(b) == 0:
-        return 1.0
-    if len(a) == 0 or len(b) == 0:
-        return 0.0
-    intersection = len(a & b)
-    return intersection / min(len(a), len(b))
-
-def dif_overlap(a, b) -> float:
-    return 1 - sim_overlap(a, b)
-
-def sim_tversky(a, b, alpha=0.5, beta=0.5) -> float:
-    if alpha == 0 and beta == 0:
-        raise ValueError("alpha and beta cannot both be 0")
-    a, b = to_set(a), to_set(b)
-    if len(a) == 0 and len(b) == 0:
-        return 1.0
-    intersection = len(a & b)
-    return intersection / (intersection + alpha*len(a - b) + beta*len(b - a))
-
-def dif_tversky(a, b, alpha=0.5, beta=0.5) -> float:
-    return 1 - sim_tversky(a, b, alpha, beta)
 
 def sim_cosine_set(a, b) -> float:
     a, b = to_set(a), to_set(b)
@@ -881,42 +795,22 @@ def dist_hedgehog(a, b):
 # Metric Registry
 # ------------------------------------------------------------------
 
+def definition(metric):
+    metric = metric.lower().replace('-', '_')
+    with open(_DEFINITIONS_FILE, 'r', encoding='utf-8') as f:
+        content = f.read()
+    chunks = content.split('\n##')
+    for chunk in chunks:
+        lines = chunk.splitlines()
+        header = lines[0].strip().lower().replace('-', '_')
+        if header == metric:
+            body = '\n'.join(lines[1:]).strip()
+            if body.startswith('@'):
+                return definition(body[1:].strip())
+            return body
+    raise ValueError(f"No definition found for '{metric}'")
+
 METRICS = {
-    'jaccard': {
-        'default': 'sim',
-        'sim': sim_jaccard,
-        'dif': dif_jaccard,
-    },
-    'dice_sorensen': {
-        'default': 'sim',
-        'sim': sim_dice_sorensen,
-        'dif': dif_dice_sorensen,
-    },
-    'sorensen_dice': {
-        'default': 'sim',
-        'sim': sim_sorensen_dice,
-        'dif': dif_sorensen_dice,
-    },
-    'dice': {
-        'default': 'sim',
-        'sim': sim_dice,
-        'dif': dif_dice,
-    },
-    'sorensen': {
-        'default': 'sim',
-        'sim': sim_sorensen,
-        'dif': dif_sorensen,
-    },
-    'overlap': {
-        'default': 'sim',
-        'sim': sim_overlap,
-        'dif': dif_overlap,
-    },
-    'tversky': {
-        'default': 'sim',
-        'sim': sim_tversky,
-        'dif': dif_tversky,
-    },
     'cosine_set': {
         'default': 'sim',
         'sim': sim_cosine_set,

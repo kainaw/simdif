@@ -1,124 +1,46 @@
-# simdif Metric Definitions
 
----
 
-## jaccard
 
-The **Jaccard Similarity Index** measures the similarity between two sets as the ratio of their intersection to their union.
+##cosine_set
+Set Cosine Similarity
+---------------------
+Applies cosine similarity to sets by treating them as binary vectors.
 
-**Formula:**
+Formula:
+    C(A, B) = |A ∩ B| / √(|A| · |B|)
 
-$$J(A, B) = \frac{|A \cap B|}{|A \cup B|}$$
+Range: [0, 1]
+    1 = identical
+    0 = no shared elements
 
-**Range:** [0, 1] where 1 means identical and 0 means no shared elements.
+Aliases: Ochiai
 
-**Note:** This is an *index*, not a coefficient — values are ordinal and arithmetic operations such as averaging or subtraction are not meaningful.
+##ochiai
+@cosine_set
 
----
 
-## dice
+##russel_rao
+Russel-Rao Coefficient
+----------------------
+Measures similarity as the intersection over the size of the larger set.
 
-The **Dice Similarity Coefficient** (also known as the Sørensen–Dice coefficient) measures set overlap by weighting the intersection double relative to the total size of both sets.
+Formula:
+    RR(A, B) = |A ∩ B| / max(|A|, |B|)
 
-**Formula:**
+Range: [0, 1]
 
-$$D(A, B) = \frac{2|A \cap B|}{|A| + |B|}$$
 
-**Range:** [0, 1] where 1 means identical and 0 means no shared elements.
+##rogers_tanimoto
+Rogers-Tanimoto Coefficient
+---------------------------
+A variant of Jaccard that penalizes non-shared elements double, making it harder to achieve high similarity scores.
 
-**Note:** This is a *coefficient*, not an index — arithmetic operations on Dice scores are mathematically valid.
+Formula:
+    RT(A, B) = |A ∩ B| / (|A ∩ B| + 2|A ∪ B - A ∩ B|
 
-**Aliases:** `sorensen`, `sorensen_dice`, `dice_sorensen`
+Range: [0, 1]
 
----
-
-## sorensen
-
-Alias for the Dice Similarity Coefficient. See `dice`.
-
----
-
-## overlap
-
-The **Overlap Coefficient** (also known as the Szymkiewicz–Simpson coefficient) measures the degree to which one set is a subset of the other.
-
-**Formula:**
-
-$$O(A, B) = \frac{|A \cap B|}{\min(|A|, |B|)}$$
-
-**Range:** [0, 1] where 1 means one set is a complete subset of the other and 0 means no shared elements.
-
-**Note:** Returns 1.0 when one set is entirely contained within the other, regardless of the size difference.
-
----
-
-## tversky
-
-The **Tversky Index** is a generalization of both Jaccard and Dice that allows asymmetric weighting of the two sets via parameters α and β.
-
-**Formula:**
-
-$$T(A, B) = \frac{|A \cap B|}{|A \cap B| + \alpha|A \setminus B| + \beta|B \setminus A|}$$
-
-**Parameters:**
-- α controls the penalty for elements in A but not B
-- β controls the penalty for elements in B but not A
-- α = β = 1 → Jaccard
-- α = β = 0.5 → Dice
-
-**Range:** [0, 1]
-
-**Constraint:** α and β cannot both be 0.
-
----
-
-## cosine_set
-
-The **Set Cosine Similarity** (also known as the Ochiai coefficient) applies cosine similarity to sets by treating them as binary vectors.
-
-**Formula:**
-
-$$C(A, B) = \frac{|A \cap B|}{\sqrt{|A| \cdot |B|}}$$
-
-**Range:** [0, 1] where 1 means identical and 0 means no shared elements.
-
-**Aliases:** `ochiai`
-
----
-
-## ochiai
-
-Alias for Set Cosine Similarity. See `cosine_set`.
-
-**Note:** The Ochiai coefficient was independently derived in ecology and is mathematically identical to set cosine similarity.
-
----
-
-## russel_rao
-
-The **Russel-Rao Coefficient** measures similarity as the intersection over the size of the larger set.
-
-**Formula:**
-
-$$RR(A, B) = \frac{|A \cap B|}{\max(|A|, |B|)}$$
-
-**Range:** [0, 1]
-
----
-
-## rogers_tanimoto
-
-The **Rogers-Tanimoto Coefficient** is a variant of Jaccard that penalizes non-shared elements double, making it harder to achieve high similarity scores.
-
-**Formula:**
-
-$$RT(A, B) = \frac{|A \cap B|}{|A \cap B| + 2|A \triangle B|}$$
-
-where $|A \triangle B| = |A \cup B| - |A \cap B|$ is the symmetric difference (non-shared elements).
-
-**Range:** [0, 1]
-
-**Aliases:** `sokal_sneath2`
+Aliases: Sokal-Sneath2
 
 ---
 
@@ -128,7 +50,7 @@ The **Sokal-Sneath Coefficient (SS1)** rewards shared elements double, making it
 
 **Formula:**
 
-$$SS1(A, B) = \frac{2|A \cap B|}{2|A \cap B| + |A \triangle B|}$$
+$$SS1(A, B) = \frac{2|A ∩ B|}{2|A ∩ B| + |A \triangle B|}$$
 
 **Range:** [0, 1]
 
@@ -154,7 +76,7 @@ The **Sokal-Sneath III Coefficient** is the ratio of shared elements to non-shar
 
 **Formula:**
 
-$$SS3(A, B) = \frac{|A \cap B|}{|A \triangle B|}$$
+$$SS3(A, B) = \frac{|A ∩ B|}{|A \triangle B|}$$
 
 **Range:** [0, ∞) — unbounded, higher means more similar. No `dif` equivalent.
 
