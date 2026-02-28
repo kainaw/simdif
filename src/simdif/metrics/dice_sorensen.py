@@ -24,7 +24,7 @@ info_sorensen_dice = info_dice_sorensen
 info_dice = info_dice_sorensen
 info_sorensen = info_dice_sorensen
 
-def explain_dice_sorensen(a, b) -> str:
+def explain_dice_sorensen(a, b, **_) -> str:
     a, b = to_set(a), to_set(b)
     i = sorted(map(str, a & b))
     a = sorted(map(str, a))
@@ -43,7 +43,7 @@ explain_sorensen_dice = explain_dice_sorensen
 explain_dice = explain_dice_sorensen
 explain_sorensen = explain_dice_sorensen
 
-def sim_dice_sorensen(a, b) -> float:
+def sim_dice_sorensen(a, b, **_) -> float:
     n00, n01, n10, n11 = _aleph_counts(a, b)
     if (n11 + n10 + n01) == 0:
         return 1.0
@@ -52,7 +52,7 @@ sim_sorensen_dice = sim_dice_sorensen
 sim_dice = sim_dice_sorensen
 sim_sorensen = sim_dice_sorensen
 
-def dif_dice_sorensen(a, b) -> float:
+def dif_dice_sorensen(a, b, **_) -> float:
     return 1 - sim_dice(a, b)
 dif_sorensen_dice = dif_dice_sorensen
 dif_dice = dif_dice_sorensen

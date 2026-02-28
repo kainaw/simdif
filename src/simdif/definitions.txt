@@ -1,24 +1,5 @@
 
 
-
-##cosine_set
-Set Cosine Similarity
----------------------
-Applies cosine similarity to sets by treating them as binary vectors.
-
-Formula:
-    C(A, B) = |A ∩ B| / √(|A| · |B|)
-
-Range: [0, 1]
-    1 = identical
-    0 = no shared elements
-
-Aliases: Ochiai
-
-##ochiai
-@cosine_set
-
-
 ##russel_rao
 Russel-Rao Coefficient
 ----------------------

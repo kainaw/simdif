@@ -24,7 +24,7 @@ Aliases: IoU (Intersection over Union), Tanimoto-Set
 info_iou = info_jaccard
 
 
-def explain_jaccard(a, b) -> str:
+def explain_jaccard(a, b, **_) -> str:
     a, b = to_set(a), to_set(b)
     i = sorted(map(str, a & b))
     u = sorted(map(str, a | b))
@@ -43,7 +43,7 @@ Difference: 1 - Similarity = {1 - ni / nu if nu>0 else 'Division by Zero'}
 explain_iou = explain_jaccard
 
 
-def sim_jaccard(a, b) -> float:
+def sim_jaccard(a, b, **_) -> float:
     n00, n01, n10, n11 = _aleph_counts(a, b)
     if (n11 + n10 + n01) == 0:
         return 1.0
@@ -51,7 +51,7 @@ def sim_jaccard(a, b) -> float:
 sim_iou = sim_jaccard
 
 
-def dif_jaccard(a, b) -> float:
+def dif_jaccard(a, b, **_) -> float:
     return 1 - sim_jaccard(a, b)
 dif_iou = dif_jaccard
 

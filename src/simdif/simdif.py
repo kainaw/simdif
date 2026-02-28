@@ -220,22 +220,6 @@ def _aleph_counts(a, b, n_universe=0):
 # Set Metrics
 # ------------------------------------------------------------------
 
-
-def sim_cosine_set(a, b) -> float:
-    a, b = to_set(a), to_set(b)
-    if len(a) == 0 and len(b) == 0:
-        return 1.0
-    if len(a) == 0 or len(b) == 0:
-        return 0.0
-    return len(a & b)/(len (a) * len(b)) ** 0.5
-
-sim_ochiai = sim_cosine_set
-
-def dif_cosine_set(a, b) -> float:
-    return 1 - sim_cosine_set(a, b)
-
-dif_ochiai = dif_cosine_set
-
 def sim_russel_rao(a, b) -> float:
     n00, n01, n10, n11 = _aleph_counts(a, b)
     if (n11 + n10 + n01 + n00) == 0:
@@ -811,16 +795,6 @@ def definition(metric):
     raise ValueError(f"No definition found for '{metric}'")
 
 METRICS = {
-    'cosine_set': {
-        'default': 'sim',
-        'sim': sim_cosine_set,
-        'dif': dif_cosine_set,
-    },
-    'ochiai': {
-        'default': 'sim',
-        'sim': sim_ochiai,
-        'dif': dif_ochiai,
-    },
     'russel_rao': {
         'default': 'sim',
         'sim': sim_russel_rao,

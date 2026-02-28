@@ -26,7 +26,7 @@ Note: This is an index, not a coefficient.
     """.strip()
 
 
-def explain_tversky(a, b, alpha=0.5, beta=0.5) -> str:
+def explain_tversky(a, b, alpha=0.5, beta=0.5, **_) -> str:
     a, b = to_set(a), to_set(b)
     i = sorted(map(str, a & b))
     u = sorted(map(str, a | b))
@@ -53,7 +53,7 @@ Difference: 1 - Similarity = {1 - ni / (nu+alpha*nua+beta*nub) if nu+alpha*nua+b
     """.strip()
 
 
-def sim_tversky(a, b, alpha=0.5, beta=0.5) -> float:
+def sim_tversky(a, b, alpha=0.5, beta=0.5, **_) -> float:
     if alpha == 0 and beta == 0:
         raise ValueError("alpha and beta cannot both be 0")
     a, b = to_set(a), to_set(b)
@@ -63,7 +63,7 @@ def sim_tversky(a, b, alpha=0.5, beta=0.5) -> float:
     return intersection / (intersection + alpha*len(a - b) + beta*len(b - a))
 
 
-def dif_tversky(a, b, alpha=0.5, beta=0.5) -> float:
+def dif_tversky(a, b, alpha=0.5, beta=0.5, **_) -> float:
     return 1 - sim_tversky(a, b, alpha, beta)
 
 

@@ -23,7 +23,7 @@ Aliases: Szymkiewicz–Simpson, Simpson
 info_szymkiewicz_simpson = info_overlap
 info_simpson = info_overlap
 
-def explain_overlap(a, b) -> str:
+def explain_overlap(a, b, **_) -> str:
     a, b = to_set(a), to_set(b)
     i = sorted(map(str, a & b))
     a = sorted(map(str, a))
@@ -42,7 +42,7 @@ explain_szymkiewicz_simpson = explain_overlap
 explain_simpson = explain_overlap
 
 
-def sim_overlap(a, b) -> float:
+def sim_overlap(a, b, **_) -> float:
     a, b = to_set(a), to_set(b)
     if len(a) == 0 and len(b) == 0:
         return 1.0
@@ -54,7 +54,7 @@ sim_szymkiewicz_simpson = sim_overlap
 sim_simpson = sim_overlap
 
 
-def dif_overlap(a, b) -> float:
+def dif_overlap(a, b, **_) -> float:
     return 1 - sim_overlap(a, b)
 dif_szymkiewicz_simpson = dif_overlap
 dif_simpson = dif_overlap
