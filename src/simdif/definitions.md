@@ -1,0 +1,463 @@
+# simdif Metric Definitions
+
+---
+
+## jaccard
+
+The **Jaccard Similarity Index** measures the similarity between two sets as the ratio of their intersection to their union.
+
+**Formula:**
+
+$$J(A, B) = \frac{|A \cap B|}{|A \cup B|}$$
+
+**Range:** [0, 1] where 1 means identical and 0 means no shared elements.
+
+**Note:** This is an *index*, not a coefficient — values are ordinal and arithmetic operations such as averaging or subtraction are not meaningful.
+
+---
+
+## dice
+
+The **Dice Similarity Coefficient** (also known as the Sørensen–Dice coefficient) measures set overlap by weighting the intersection double relative to the total size of both sets.
+
+**Formula:**
+
+$$D(A, B) = \frac{2|A \cap B|}{|A| + |B|}$$
+
+**Range:** [0, 1] where 1 means identical and 0 means no shared elements.
+
+**Note:** This is a *coefficient*, not an index — arithmetic operations on Dice scores are mathematically valid.
+
+**Aliases:** `sorensen`, `sorensen_dice`, `dice_sorensen`
+
+---
+
+## sorensen
+
+Alias for the Dice Similarity Coefficient. See `dice`.
+
+---
+
+## overlap
+
+The **Overlap Coefficient** (also known as the Szymkiewicz–Simpson coefficient) measures the degree to which one set is a subset of the other.
+
+**Formula:**
+
+$$O(A, B) = \frac{|A \cap B|}{\min(|A|, |B|)}$$
+
+**Range:** [0, 1] where 1 means one set is a complete subset of the other and 0 means no shared elements.
+
+**Note:** Returns 1.0 when one set is entirely contained within the other, regardless of the size difference.
+
+---
+
+## tversky
+
+The **Tversky Index** is a generalization of both Jaccard and Dice that allows asymmetric weighting of the two sets via parameters α and β.
+
+**Formula:**
+
+$$T(A, B) = \frac{|A \cap B|}{|A \cap B| + \alpha|A \setminus B| + \beta|B \setminus A|}$$
+
+**Parameters:**
+- α controls the penalty for elements in A but not B
+- β controls the penalty for elements in B but not A
+- α = β = 1 → Jaccard
+- α = β = 0.5 → Dice
+
+**Range:** [0, 1]
+
+**Constraint:** α and β cannot both be 0.
+
+---
+
+## cosine_set
+
+The **Set Cosine Similarity** (also known as the Ochiai coefficient) applies cosine similarity to sets by treating them as binary vectors.
+
+**Formula:**
+
+$$C(A, B) = \frac{|A \cap B|}{\sqrt{|A| \cdot |B|}}$$
+
+**Range:** [0, 1] where 1 means identical and 0 means no shared elements.
+
+**Aliases:** `ochiai`
+
+---
+
+## ochiai
+
+Alias for Set Cosine Similarity. See `cosine_set`.
+
+**Note:** The Ochiai coefficient was independently derived in ecology and is mathematically identical to set cosine similarity.
+
+---
+
+## russel_rao
+
+The **Russel-Rao Coefficient** measures similarity as the intersection over the size of the larger set.
+
+**Formula:**
+
+$$RR(A, B) = \frac{|A \cap B|}{\max(|A|, |B|)}$$
+
+**Range:** [0, 1]
+
+---
+
+## rogers_tanimoto
+
+The **Rogers-Tanimoto Coefficient** is a variant of Jaccard that penalizes non-shared elements double, making it harder to achieve high similarity scores.
+
+**Formula:**
+
+$$RT(A, B) = \frac{|A \cap B|}{|A \cap B| + 2|A \triangle B|}$$
+
+where $|A \triangle B| = |A \cup B| - |A \cap B|$ is the symmetric difference (non-shared elements).
+
+**Range:** [0, 1]
+
+**Aliases:** `sokal_sneath2`
+
+---
+
+## sokal_sneath
+
+The **Sokal-Sneath Coefficient (SS1)** rewards shared elements double, making it easier to achieve high similarity scores. It is the inverse philosophy of Rogers-Tanimoto.
+
+**Formula:**
+
+$$SS1(A, B) = \frac{2|A \cap B|}{2|A \cap B| + |A \triangle B|}$$
+
+**Range:** [0, 1]
+
+**Aliases:** `sokal_sneath1`
+
+---
+
+## sokal_sneath1
+
+Alias for the primary Sokal-Sneath coefficient. See `sokal_sneath`.
+
+---
+
+## sokal_sneath2
+
+Alias for Rogers-Tanimoto. See `rogers_tanimoto`.
+
+---
+
+## sokal_sneath3
+
+The **Sokal-Sneath III Coefficient** is the ratio of shared elements to non-shared elements.
+
+**Formula:**
+
+$$SS3(A, B) = \frac{|A \cap B|}{|A \triangle B|}$$
+
+**Range:** [0, ∞) — unbounded, higher means more similar. No `dif` equivalent.
+
+**Note:** Returns `inf` for identical sets (zero non-shared elements).
+
+---
+
+## cosine
+
+**Vector Cosine Similarity** measures the cosine of the angle between two numeric vectors, regardless of their magnitude.
+
+**Formula:**
+
+$$\cos(A, B) = \frac{A \cdot B}{\|A\| \cdot \|B\|}$$
+
+**Range:** [-1, 1] where 1 means same direction, 0 means orthogonal, -1 means opposite direction.
+
+**Note:** For sets, see `cosine_set`. For `dif_cosine`, the signed convention is preserved: negative similarity produces negative difference.
+
+---
+
+## hamming
+
+The **Hamming Distance** counts the number of positions at which two equal-length sequences differ.
+
+**Formula:**
+
+$$H(A, B) = \sum_{i} \mathbf{1}[A_i \neq B_i]$$
+
+**Range (dist):** [0, len] where len is the length of the sequences.
+
+**Range (sim):** [0, 1] when normalized by sequence length.
+
+**Constraint:** Both sequences must be the same length.
+
+**Note:** Operates on ordered sequences, not sets — position and duplicates matter.
+
+---
+
+## tanimoto
+
+The **Tanimoto Coefficient** applies Jaccard-style similarity to binary vectors, counting position-wise matches of 1s.
+
+**Formula:**
+
+$$T(A, B) = \frac{|A \cdot B|}{|A| + |B| - |A \cdot B|}$$
+
+where $|A \cdot B|$ is the count of positions where both vectors are 1.
+
+**Range:** [0, 1]
+
+**Note:** Operates on binary (0/1) vectors. Use `binary=True` parameter to automatically convert integers to binary vectors.
+
+---
+
+## minkowski
+
+The **Minkowski Distance** is a generalization of Euclidean and Manhattan distances parameterized by p.
+
+**Formula:**
+
+$$M_p(A, B) = \left(\sum_{i} |A_i - B_i|^p\right)^{1/p}$$
+
+**Range:** [0, ∞)
+
+**Special cases:**
+- p = 1 → Manhattan distance
+- p = 2 → Euclidean distance
+- p → ∞ → Chebyshev distance
+
+**Constraint:** p is required — no default is provided.
+
+---
+
+## euclidean
+
+The **Euclidean Distance** is the straight-line distance between two points in space. It is Minkowski distance with p = 2.
+
+**Formula:**
+
+$$E(A, B) = \sqrt{\sum_{i} (A_i - B_i)^2}$$
+
+**Range:** [0, ∞)
+
+---
+
+## manhattan
+
+The **Manhattan Distance** (also called Taxicab or City Block distance) is the sum of absolute differences. It is Minkowski distance with p = 1.
+
+**Formula:**
+
+$$M(A, B) = \sum_{i} |A_i - B_i|$$
+
+**Range:** [0, ∞)
+
+**Aliases:** `taxicab`, `cityblock`
+
+---
+
+## taxicab
+
+Alias for Manhattan distance. See `manhattan`.
+
+---
+
+## cityblock
+
+Alias for Manhattan distance. See `manhattan`.
+
+---
+
+## chebyshev
+
+The **Chebyshev Distance** (also called L∞ or Chessboard distance) is the maximum absolute difference across all dimensions. It is the limit of Minkowski distance as p → ∞.
+
+**Formula:**
+
+$$C(A, B) = \max_{i} |A_i - B_i|$$
+
+**Range:** [0, ∞)
+
+**Aliases:** `chessboard`, `linf`
+
+---
+
+## chessboard
+
+Alias for Chebyshev distance. See `chebyshev`.
+
+---
+
+## linf
+
+Alias for Chebyshev distance. See `chebyshev`.
+
+---
+
+## canberra
+
+The **Canberra Distance** is a weighted version of Manhattan distance that normalizes each term by the sum of absolute values, making it sensitive to small differences near zero.
+
+**Formula:**
+
+$$C(A, B) = \sum_{i} \frac{|A_i - B_i|}{|A_i| + |B_i|}$$
+
+**Range:** [0, n] where n is the number of dimensions.
+
+**Note:** Undefined when both $A_i$ and $B_i$ are zero for any dimension; by convention that term contributes 0.
+
+---
+
+## lee
+
+The **Lee Distance** measures the distance between two sequences of integers modulo q, wrapping around at the boundary.
+
+**Formula:**
+
+$$L(A, B) = \sum_{i} \min(|A_i - B_i|, q - |A_i - B_i|)$$
+
+**Range:** [0, ∞)
+
+**Parameter:** q is the modulus (alphabet size). If not provided, it is inferred as max(values) + 1.
+
+---
+
+## levenshtein
+
+The **Levenshtein Edit Distance** is the minimum number of single-character insertions, deletions, or substitutions required to transform one sequence into another.
+
+**Formula:** Computed via dynamic programming.
+
+$$\text{lev}(A, B) = \begin{cases} |A| & \text{if } |B| = 0 \\ |B| & \text{if } |A| = 0 \\ \text{lev}(A[1:], B[1:]) & \text{if } A[0] = B[0] \\ 1 + \min\begin{cases}\text{lev}(A[1:], B) \\ \text{lev}(A, B[1:]) \\ \text{lev}(A[1:], B[1:])\end{cases} & \text{otherwise} \end{cases}$$
+
+**Range (dist):** [0, max(len(A), len(B))]
+
+**Range (sim):** [0, 1] when normalized by max length.
+
+---
+
+## damerau_levenshtein
+
+The **Damerau-Levenshtein Distance** extends Levenshtein by adding transposition (swapping two adjacent characters) as a fourth allowed operation.
+
+**Operations:** insertion, deletion, substitution, transposition
+
+**Range:** [0, max(len(A), len(B))]
+
+**Note:** This implementation uses the Optimal String Alignment (restricted) variant, which does not allow a substring to be edited more than once.
+
+---
+
+## indel
+
+The **Indel Distance** is a restricted form of Levenshtein that only allows insertions and deletions — no substitutions. A substitution costs 2 (one delete + one insert).
+
+**Range:** [0, len(A) + len(B)]
+
+---
+
+## needleman_wunsch
+
+The **Needleman-Wunsch Algorithm** performs global sequence alignment, finding the optimal alignment of two sequences across their entire length.
+
+**Scoring:** match reward, mismatch penalty, gap penalty (all configurable)
+
+**Output:** alignment score (higher is better)
+
+**Default parameters:** match=1, mismatch=-1, gap=-1
+
+**Note:** Returns a score, not a distance — higher values mean better alignment. Use `trace_needleman_wunsch` to retrieve the actual aligned sequences.
+
+**Aliases:** `needleman`, `wunsch`
+
+---
+
+## smith_waterman
+
+The **Smith-Waterman Algorithm** performs local sequence alignment, finding the highest-scoring matching subsequence between two sequences.
+
+**Scoring:** match reward, mismatch penalty, gap penalty (all configurable)
+
+**Output:** alignment score (higher is better)
+
+**Default parameters:** match=2, mismatch=-1, gap=-1
+
+**Note:** Unlike Needleman-Wunsch, scores never go below 0. The result is the maximum value in the DP matrix, not the corner cell. Use `trace_smith_waterman` to retrieve the actual aligned subsequences.
+
+**Aliases:** `smith`, `waterman`
+
+---
+
+## lcs
+
+The **Longest Common Subsequence** finds the length of the longest subsequence present in both sequences (elements do not need to be contiguous).
+
+**Range (score):** [0, min(len(A), len(B))]
+
+**Range (dist):** [0, len(A) + len(B)] computed as len(A) + len(B) - 2 * score
+
+**Note:** Distinct from Longest Common Substring, which requires contiguous matching elements.
+
+---
+
+## jaro
+
+The **Jaro Similarity** is designed for short strings such as names. It accounts for matching characters within a window and transpositions.
+
+**Formula:**
+
+$$J(A, B) = \begin{cases} 0 & \text{if } m = 0 \\ \frac{1}{3}\left(\frac{m}{|A|} + \frac{m}{|B|} + \frac{m - t/2}{m}\right) & \text{otherwise} \end{cases}$$
+
+where $m$ is the number of matching characters and $t$ is the number of transpositions.
+
+**Range:** [0, 1]
+
+---
+
+## jaro_winkler
+
+The **Jaro-Winkler Similarity** extends Jaro with a prefix bonus — sequences sharing a common prefix score higher.
+
+**Formula:**
+
+$$JW(A, B) = J(A, B) + \ell \cdot p \cdot (1 - J(A, B))$$
+
+where $\ell$ is the length of the common prefix (up to 4) and $p$ is the scaling factor.
+
+**Range:** [0, 1]
+
+**Default parameters:** p=0.1, max_l=4
+
+**Constraint:** p should not exceed 0.25 to guarantee the result stays within [0, 1].
+
+---
+
+## monge_elkan
+
+The **Monge-Elkan Similarity** compares two tokenized strings by finding the best matching token in B for each token in A, then averaging the best match scores.
+
+**Formula:**
+
+$$ME(A, B) = \frac{1}{|A|} \sum_{a \in A} \max_{b \in B} \text{sim}(a, b)$$
+
+**Range:** [0, 1]
+
+**Default inner metric:** `jaro_winkler`
+
+**Note:** Asymmetric — ME(A, B) ≠ ME(B, A) in general.
+
+---
+
+## bray_curtis
+
+The **Bray-Curtis Dissimilarity** measures the compositional dissimilarity between two samples, commonly used in ecology for abundance data.
+
+**Formula:**
+
+$$BC(A, B) = \frac{\sum_{i} |A_i - B_i|}{\sum_{i} |A_i + B_i|}$$
+
+**Range:** [0, 1] where 0 means identical composition and 1 means completely different.
+
+**Note:** Technically a dissimilarity measure, not a true distance metric, as it does not satisfy the triangle inequality.
+
+---
+

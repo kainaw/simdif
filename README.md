@@ -54,7 +54,7 @@ trace(a, b, "metric")
 A common simdif function can be used in place of the independent functions:
 
 ```python
-simdiff(a, b, "metric")
+simdif(a, b, "metric")
 ```
 
 The most common form of the metric will be selected.
@@ -216,8 +216,6 @@ Similarity
 
 
 Difference
-├── Levenshtein
-├── Monge-Elkan
 ├── Hamming
 └── Overlap variants
 
@@ -228,7 +226,9 @@ Distance
 │   ├── Manhattan (p=1)
 │   └── Chebyshev (p=∞)
 ├── Bray-Curtis
-└── Canberra
+├── Canberra
+├── Levenshtein
+└── Monge-Elkan
 
 
 Alignment

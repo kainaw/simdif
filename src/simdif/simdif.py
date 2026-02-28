@@ -1,7 +1,27 @@
 """
-simdif (and dist, and score, and trace...)
+simdif - Similarity, Difference, Distance, and Score Metrics for Python
+=======================================================================
+
+A unified library for computing similarity, difference, distance, alignment
+scores, and sequence traces across sets, vectors, strings, and sequences.
+
+Supported metric categories:
+    sim_*   - Similarity metrics (e.g., Jaccard, Cosine, Dice)
+    dif_*   - Difference metrics (e.g., Levenshtein, Hamming)
+    dist_*  - Distance metrics (e.g., Euclidean, Manhattan)
+    score_* - Alignment scores (e.g., Needleman-Wunsch, Smith-Waterman)
+    trace_* - Alignment tracebacks (aligned sequence pairs)
+
+Basic usage:
+    from simdif import sim, dist
+    sim("night", "nacht", "jaro")
+    dist([1, 2, 3], [4, 5, 6], "euclidean")
+
+Author: C. Shaun Wagner
+License: MIT
 """
 
+import math
 import numbers
 import sys
 
@@ -162,6 +182,39 @@ def to_tokens(val):
         return val.split()
     return to_list(val)
 
+def to_distribution(val):
+    lst = to_list_numeric(val)
+    if any(x < 0 for x in lst):
+        raise ValueError("Distribution contains negative values")
+    total = sum(lst)
+    if total == 0:
+        raise ValueError("Distribution sums to zero")
+    return [x / total for x in lst]
+
+def _rank(lst):
+    sorted_with_index = sorted(enumerate(lst), key=lambda x: x[1])
+    ranks = [0.0] * len(lst)
+    i = 0
+    while i < len(lst):
+        j = i
+        while j < len(lst) - 1 and sorted_with_index[j+1][1] == sorted_with_index[i][1]:
+            j += 1
+        avg_rank = (i + j) / 2 + 1
+        for k in range(i, j+1):
+            ranks[sorted_with_index[k][0]] = avg_rank
+        i = j + 1
+    return ranks
+
+
+def _aleph_counts(a, b, n_universe=0):
+    a, b = to_set(a), to_set(b)
+    n11 = len(a & b)
+    n10 = len(a - b)
+    n01 = len(b - a)
+    n00 = max(0, n_universe - len(a | b))
+    return n00, n01, n10, n11
+
+
 # ------------------------------------------------------------------
 # Set Metrics
 # ------------------------------------------------------------------
@@ -186,11 +239,11 @@ def sim_jaccard(a, b) -> float:
         A value between 0 and 1, where 1 means the sets are identical
         and 0 means they share no elements.
     """
-    a, b = to_set(a), to_set(b)
-    if len(a) == 0 and len(b) == 0:
+    n00, n01, n10, n11 = _aleph_counts(a, b)
+    if (n11 + n10 + n01) == 0:
         return 1.0
-    intersection = len(a & b)
-    return intersection / (len(a) + len(b) - intersection)
+    return n11 / (n11 + n10 + n01)
+
 
 def dif_jaccard(a, b) -> float:
     return 1 - sim_jaccard(a, b)
@@ -214,11 +267,10 @@ def sim_dice_sorensen(a, b) -> float:
     float
         A value between 0 and 1 measuring set overlap.
     """
-    a, b = to_set(a), to_set(b)
-    if len(a) == 0 and len(b) == 0:
+    n00, n01, n10, n11 = _aleph_counts(a, b)
+    if (n11 + n10 + n01) == 0:
         return 1.0
-    intersection = len(a & b)
-    return 2 * intersection / (len(a) + len(b))
+    return 2 * n11 / (2 * n11 + n10 + n01)
 
 sim_sorensen_dice = sim_dice_sorensen
 sim_dice = sim_dice_sorensen
@@ -271,21 +323,19 @@ def dif_cosine_set(a, b) -> float:
 dif_ochiai = dif_cosine_set
 
 def sim_russel_rao(a, b) -> float:
-    a, b = to_set(a), to_set(b)
-    if len(a) == 0 and len(b) == 0:
+    n00, n01, n10, n11 = _aleph_counts(a, b)
+    if (n11 + n10 + n01 + n00) == 0:
         return 1.0
-    return len(a & b) / max(len(a), len(b))
+    return n11 / (n11 + n10 + n01 + n00)
 
 def dif_russel_rao(a, b) -> float:
     return 1.0 - sim_russel_rao(a, b)
 
 def sim_rogers_tanimoto(a, b) -> float:
-    a, b = to_set(a), to_set(b)
-    if len(a) == 0 and len(b) == 0:
+    n00, n01, n10, n11 = _aleph_counts(a, b)
+    if (n11 + n10 + n01) == 0:
         return 1.0
-    intersection = len(a & b)
-    non_shared = len(a | b) - intersection
-    return intersection / (intersection + 2 * non_shared)
+    return n11 / (n11 + 2 * (n10 + n01))
 
 def dif_rogers_tanimoto(a, b) -> float:
     return 1.0 - sim_rogers_tanimoto(a, b)
@@ -322,6 +372,15 @@ def sim_sokal_sneath3(a, b) -> float:
     if non_shared == 0:
         return float('inf')
     return len(a & b) / non_shared
+
+def sim_smc(a, b, n_universe) -> float:
+    n00, n01, n10, n11 = _aleph_counts(a, b, n_universe)
+    if (n11 + n10 + n01 + n00) == 0:
+        return 1.0
+    return (n11 + n00) / (n11 + n10 + n01 + n00)
+
+def dif_smc(a, b, n_universe) -> float:
+    return 1.0 - sim_smc
 
 # ------------------------------------------------------------------
 # Vector Metrics
@@ -371,6 +430,86 @@ def dif_cosine(a, b) -> float:
 
 def dist_cosine(a, b) -> float:
     return 1 - sim_cosine(a, b)
+
+
+def sim_pearson(a, b) -> float:
+    a, b = to_list_num(a), to_list_num(b)
+    if len(a) != len(b):
+        raise ValueError(f"Sequences must be the same length, got {len(a)} and {len(b)}")
+    if len(a) < 2:
+        raise ValueError(f"Pearson requires at least 2 elements, got {len(a)}")
+    n = len(a)
+    mean_a = sum(a) / n
+    mean_b = sum(b) / n
+    numerator = sum((x - mean_a) * (y - mean_b) for x, y in zip(a, b))
+    denom_a = sum((x - mean_a) ** 2 for x in a) ** 0.5
+    denom_b = sum((y - mean_b) ** 2 for y in b) ** 0.5
+    if denom_a == 0 or denom_b == 0:
+        return 0.0
+    return numerator / (denom_a * denom_b)
+
+
+def sim_spearman(a, b) -> float:
+    a, b = to_list_numeric(a), to_list_numeric(b)
+    if len(a) != len(b):
+        raise ValueError(f"Sequences must be the same length, got {len(a)} and {len(b)}")
+    if len(a) < 2:
+        raise ValueError(f"Spearman requires at least 2 elements, got {len(a)}")
+    return sim_pearson(_rank(a), _rank(b))
+
+
+def sim_kendall_tau(a, b) -> float:
+    a, b = to_list_numeric(a), to_list_numeric(b)
+    if len(a) != len(b):
+        raise ValueError(f"Sequences must be the same length, got {len(a)} and {len(b)}")
+    if len(a) < 2:
+        raise ValueError(f"Kendall's Tau requires at least 2 elements, got {len(a)}")
+    n = len(a)
+    concordant = 0
+    discordant = 0
+    for i in range(n):
+        for j in range(i + 1, n):
+            a_dir = a[i] - a[j]
+            b_dir = b[i] - b[j]
+            if a_dir * b_dir > 0:
+                concordant += 1
+            elif a_dir * b_dir < 0:
+                discordant += 1
+            # if either is 0, it's a tie — we ignore it (Tau-b handles ties differently)
+    total = n * (n - 1) // 2
+    return (concordant - discordant) / total
+sim_kendall_tau_a = sim_kendall_tau
+sim_tau_a = sim_kendall_tau
+
+def sim_kendall_tau_b(a, b) -> float:
+    a, b = to_list_numeric(a), to_list_numeric(b)
+    if len(a) != len(b):
+        raise ValueError(f"Sequences must be the same length, got {len(a)} and {len(b)}")
+    if len(a) < 2:
+        raise ValueError(f"Kendall's Tau-b requires at least 2 elements, got {len(a)}")
+    n = len(a)
+    concordant = 0
+    discordant = 0
+    ties_a = 0
+    ties_b = 0
+    for i in range(n):
+        for j in range(i + 1, n):
+            a_dir = a[i] - a[j]
+            b_dir = b[i] - b[j]
+            if a_dir == 0:
+                ties_a += 1
+            if b_dir == 0:
+                ties_b += 1
+            if a_dir * b_dir > 0:
+                concordant += 1
+            elif a_dir * b_dir < 0:
+                discordant += 1
+    total = n * (n - 1) // 2
+    denominator = ((total - ties_a) * (total - ties_b)) ** 0.5
+    if denominator == 0:
+        return 0.0
+    return (concordant - discordant) / denominator
+sim_tau_b=sim_kendall_tau_b
 
 def dist_hamming(a, b, binary=False) -> int:
     if binary:
@@ -457,6 +596,26 @@ def dist_canberra(a, b) -> float:
         if denominator > 0:
             score += abs(x - y) / denominator
     return score
+
+
+def dist_kl_divergence(a, b) -> float:
+    a = _to_distribution(a, "a")
+    b = _to_distribution(b, "b")
+    if len(a) != len(b):
+        raise ValueError(f"Distributions must have the same length, got {len(a)} and {len(b)}")
+    return sum(p * math.log(p / q) for p, q in zip(a, b) if p > 0)
+dist_kullback_leibler=dist_kl_divergence
+
+def dist_js_divergence(a, b) -> float:
+    a = _to_distribution(a, "a")
+    b = _to_distribution(b, "b")
+    if len(a) != len(b):
+        raise ValueError(f"Distributions must have the same length, got {len(a)} and {len(b)}")
+    m = [(x + y) / 2 for x, y in zip(a, b)]
+    kl_a = sum(p * math.log(p / q) for p, q in zip(a, m) if p > 0)
+    kl_b = sum(p * math.log(p / q) for p, q in zip(b, m) if p > 0)
+    return (kl_a + kl_b) / 2
+dist_jensen_shannon = dist_js_divergence
 
 # ------------------------------------------------------------------
 # Edit Distance Metrics
@@ -797,12 +956,45 @@ METRICS = {
         'default': 'sim',
         'sim': sim_sokal_sneath3,
     },
+    'smc': {
+        'default': 'sim',
+        'sim': sim_smc,
+        'dif': dif_smc,
+    },
 
     'cosine': {
         'default': 'sim',
         'sim': sim_cosine,
         'dif': dif_cosine,
         'dist': dist_cosine,
+    },
+    'pearson': {
+        'default': 'sim',
+        'sim': sim_pearson,
+    },
+    'spearman': {
+        'default': 'sim',
+        'sim': sim_spearman,
+    },
+    'kendall_tau': {
+        'default': 'sim',
+        'sim': sim_kendall_tau,
+    },
+    'kendall_tau_a': {
+        'default': 'sim',
+        'sim': sim_kendall_tau,
+    },
+    'tau_a': {
+        'default': 'sim',
+        'sim': sim_kendall_tau,
+    },
+    'kendall_tau_b': {
+        'default': 'sim',
+        'sim': sim_kendall_tau_b,
+    },
+    'tau_b': {
+        'default': 'sim',
+        'sim': sim_kendall_tau_b,
     },
     'hamming': {
         'default': 'dist',
@@ -835,6 +1027,24 @@ METRICS = {
     'canberra': {
         'default':'dist',
         'dist': dist_canberra,
+    },
+
+    'kl_divergence': {
+        'default':'dist',
+        'dist': dist_kl_divergence,
+    },
+    'kullback_leibler': {
+        'default':'dist',
+        'dist': dist_kl_divergence,
+    },
+
+    'js_divergence': {
+        'default':'dist',
+        'dist': dist_js_divergence,
+    },
+    'jensen_shannon': {
+        'default':'dist',
+        'dist': dist_js_divergence,
     },
 
     'levenshtein': {
