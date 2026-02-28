@@ -220,23 +220,6 @@ def _aleph_counts(a, b, n_universe=0):
 # Set Metrics
 # ------------------------------------------------------------------
 
-def sim_russel_rao(a, b) -> float:
-    n00, n01, n10, n11 = _aleph_counts(a, b)
-    if (n11 + n10 + n01 + n00) == 0:
-        return 1.0
-    return n11 / (n11 + n10 + n01 + n00)
-
-def dif_russel_rao(a, b) -> float:
-    return 1.0 - sim_russel_rao(a, b)
-
-def sim_rogers_tanimoto(a, b) -> float:
-    n00, n01, n10, n11 = _aleph_counts(a, b)
-    if (n11 + n10 + n01) == 0:
-        return 1.0
-    return n11 / (n11 + 2 * (n10 + n01))
-
-def dif_rogers_tanimoto(a, b) -> float:
-    return 1.0 - sim_rogers_tanimoto(a, b)
 
 def sim_sokal_sneath(a, b) -> float:
     """
@@ -795,16 +778,6 @@ def definition(metric):
     raise ValueError(f"No definition found for '{metric}'")
 
 METRICS = {
-    'russel_rao': {
-        'default': 'sim',
-        'sim': sim_russel_rao,
-        'dif': dif_russel_rao,
-    },
-    'rogers_tanimoto': {
-        'default': 'sim',
-        'sim': sim_rogers_tanimoto,
-        'dif': dif_rogers_tanimoto,
-    },
     'sokal_sneath': {
         'default': 'sim',
         'sim': sim_sokal_sneath,
@@ -814,11 +787,6 @@ METRICS = {
         'default': 'sim',
         'sim': sim_sokal_sneath1,
         'dif': dif_sokal_sneath1,
-    },
-    'sokal_sneath2': {
-        'default': 'sim',
-        'sim': sim_sokal_sneath2,
-        'dif': dif_sokal_sneath2,
     },
     'sokal_sneath3': {
         'default': 'sim',

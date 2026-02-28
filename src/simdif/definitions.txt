@@ -1,16 +1,5 @@
 
 
-##russel_rao
-Russel-Rao Coefficient
-----------------------
-Measures similarity as the intersection over the size of the larger set.
-
-Formula:
-    RR(A, B) = |A ∩ B| / max(|A|, |B|)
-
-Range: [0, 1]
-
-
 ##rogers_tanimoto
 Rogers-Tanimoto Coefficient
 ---------------------------
