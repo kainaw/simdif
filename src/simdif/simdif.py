@@ -270,6 +270,59 @@ def dif_cosine_set(a, b) -> float:
 
 dif_ochiai = dif_cosine_set
 
+def sim_russel_rao(a, b) -> float:
+    a, b = to_set(a), to_set(b)
+    if len(a) == 0 and len(b) == 0:
+        return 1.0
+    return len(a & b) / max(len(a), len(b))
+
+def dif_russel_rao(a, b) -> float:
+    return 1.0 - sim_russel_rao(a, b)
+
+def sim_rogers_tanimoto(a, b) -> float:
+    a, b = to_set(a), to_set(b)
+    if len(a) == 0 and len(b) == 0:
+        return 1.0
+    intersection = len(a & b)
+    non_shared = len(a | b) - intersection
+    return intersection / (intersection + 2 * non_shared)
+
+def dif_rogers_tanimoto(a, b) -> float:
+    return 1.0 - sim_rogers_tanimoto(a, b)
+
+def sim_sokal_sneath(a, b) -> float:
+    """
+    Sokal-Sneath I
+    """
+    a, b = to_set(a), to_set(b)
+    if len(a) == 0 and len(b) == 0:
+        return 1.0
+    intersection = len(a & b)
+    non_shared = len(a | b) - intersection
+    return (2 * intersection) / (2 * intersection + non_shared)
+
+def dif_sokal_sneath(a, b) -> float:
+    return 1.0 - sim_sokal_sneath(a, b)
+
+sim_sokal_sneath1 = sim_sokal_sneath
+dif_sokal_sneath1 = dif_sokal_sneath
+sim_sokal_sneath2 = sim_rogers_tanimoto
+dif_sokal_sneath2 = dif_rogers_tanimoto
+
+def sim_sokal_sneath3(a, b) -> float:
+    """
+    Sokal-Sneath III coefficient.
+    Range is [0, ∞) — higher means more similar.
+    No dif equivalent due to unbounded range.
+    """
+    a, b = to_set(a), to_set(b)
+    if len(a) == 0 and len(b) == 0:
+        return 1.0
+    non_shared = len(a | b) - len(a & b)
+    if non_shared == 0:
+        return float('inf')
+    return len(a & b) / non_shared
+
 # ------------------------------------------------------------------
 # Vector Metrics
 # ------------------------------------------------------------------
@@ -409,66 +462,69 @@ def dist_canberra(a, b) -> float:
 # Edit Distance Metrics
 # ------------------------------------------------------------------
 
-def _dp_matrix(s1, s2, match_score, mismatch_penalty, gap_penalty, local, maximize) -> list:
+def _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=None, match_score=None, local=False, maximize=False) -> list:
     rows = len(s1) + 1
     cols = len(s2) + 1
     matrix = [[0] * cols for _ in range(rows)]
-    
-    if not local:  # global alignment (Needleman-Wunsch / Levenshtein)
-        for i in range(rows): matrix[i][0] = i * gap_penalty
-        for j in range(cols): matrix[0][j] = j * gap_penalty
-    
+    if not local:
+        for i in range(rows): matrix[i][0] = i * delete
+        for j in range(cols): matrix[0][j] = j * insert
     for i in range(1, rows):
         for j in range(1, cols):
-            match = matrix[i-1][j-1] + (match_score if s1[i-1] == s2[j-1] else mismatch_penalty)
-            delete = matrix[i-1][j] + gap_penalty
-            insert = matrix[i][j-1] + gap_penalty
-            cell = max(match, delete, insert) if maximize else min(match, delete, insert)
+            options = [
+                matrix[i-1][j] + delete,
+                matrix[i][j-1] + insert,
+            ]
+            if substitute is not None:
+                diag = matrix[i-1][j-1]
+                if s1[i-1] == s2[j-1]:
+                    options.append(diag if match_score is None else diag + match_score)
+                else:
+                    options.append(diag + substitute)
+            if transpose is not None and i > 1 and j > 1:
+                if s1[i-1] == s2[j-2] and s1[i-2] == s2[j-1]:
+                    options.append(matrix[i-2][j-2] + transpose)
+            cell = max(options) if maximize else min(options)
             matrix[i][j] = max(0, cell) if local else cell
-    
     return matrix
 
 def dist_levenshtein(a, b) -> int:
-    """
-    Compute the Levenshtein edit distance between two sequences.
-
-    The Levenshtein distance is the minimum number of insertions,
-    deletions, or substitutions required to transform one sequence
-    into the other.
-
-    Parameters
-    ----------
-    a : sequence
-        First sequence (string, list, etc.).
-    b : sequence
-        Second sequence.
-
-    Returns
-    -------
-    int
-        The edit distance between the two sequences.
-    """
     if isinstance(a, str) and isinstance(b, str) and 'Levenshtein' in sys.modules:
         return float(sys.modules['Levenshtein'].distance(a, b))
     s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, match_score=0, mismatch_penalty=1, gap_penalty=1, local=False, maximize=False)
-    return matrix[-1][-1]
+    return _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=None, local=False, maximize=False)[-1][-1]
+
+def dist_indel(a, b) -> int:
+    s1, s2 = to_list(a), to_list(b)
+    return _dp_matrix(s1, s2, insert=1, delete=1, substitute=None, transpose=None, local=False, maximize=False)[-1][-1]
+
+def dist_damerau_levenshtein(a, b) -> int:
+    s1, s2 = to_list(a), to_list(b)
+    return _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=1, local=False, maximize=False)[-1][-1]
 
 def score_needleman_wunsch(a, b, match_score=1, mismatch_penalty=-1, gap_penalty=-1) -> int:
     s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, match_score, mismatch_penalty, gap_penalty, local=False, maximize=True)
-    return matrix[-1][-1]
+    return _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=False, maximize=True)[-1][-1]
 
 score_needleman = score_needleman_wunsch
 score_wunsch = score_needleman_wunsch
 
 def score_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-1) -> int:
     s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, match_score, mismatch_penalty, gap_penalty, local=True, maximize=True)
+    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=True, maximize=True)
     return max(matrix[i][j] for i in range(len(s1)+1) for j in range(len(s2)+1))
 
 score_smith = score_smith_waterman
 score_waterman = score_smith_waterman
+
+def sim_levenshtein(a, b) -> float:
+    s1, s2 = to_list(a), to_list(b)
+    max_len = max(len(s1), len(s2))
+    if max_len == 0: return 1.0
+    return 1 - (dist_levenshtein(s1, s2) / max_len)
+
+def dif_levenshtein(a, b) -> float:
+    return 1 - sim_levenshtein(a, b)
 
 def sim_monge_elkan(a, b, method="jaro_winkler") -> float:
     tokens_a = to_tokens(a)
@@ -481,22 +537,9 @@ def sim_monge_elkan(a, b, method="jaro_winkler") -> float:
         total_score += best_match
     return total_score / len(tokens_a)
 
-def sim_levenshtein(a, b) -> float:
-    s1 = to_list(a)
-    s2 = to_list(b)
-    max_len = max(len(s1), len(s2))
-    if max_len == 0: return 1.0
-    return 1 - (dist_levenshtein(s1, s2) / max_len)
-
-def dif_levenshtein(a, b) -> float:
-    return 1 - sim_levenshtein(a, b)
-
 def _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local=False, gap_symbol="-"):
     rows, cols = len(s1), len(s2)
-    
-    # 1. Determine Starting Point
     if local:
-        # Smith-Waterman starts at the highest score in the entire matrix
         curr_i, curr_j = 0, 0
         max_val = -float('inf')
         for r in range(rows + 1):
@@ -505,19 +548,12 @@ def _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local
                     max_val = matrix[r][c]
                     curr_i, curr_j = r, c
     else:
-        # Needleman-Wunsch/Levenshtein starts at the bottom-right
         curr_i, curr_j = rows, cols
-
     align1, align2 = [], []
-
-    # 2. Trace back to the origin (or until 0 for local)
     while curr_i > 0 or curr_j > 0:
         if local and matrix[curr_i][curr_j] == 0:
             break
-
         current_val = matrix[curr_i][curr_j]
-
-        # Check Diagonal (Match/Mismatch)
         if curr_i > 0 and curr_j > 0:
             score = match_score if s1[curr_i-1] == s2[curr_j-1] else mismatch_penalty
             if current_val == matrix[curr_i-1][curr_j-1] + score:
@@ -526,36 +562,39 @@ def _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local
                 curr_i -= 1
                 curr_j -= 1
                 continue
-
-        # Check Up (Deletion from s1 / Gap in s2)
         if curr_i > 0 and current_val == matrix[curr_i-1][curr_j] + gap_penalty:
             align1.append(s1[curr_i-1])
             align2.append(gap_symbol)
             curr_i -= 1
-        
-        # Check Left (Deletion from s2 / Gap in s1)
         else:
             align1.append(gap_symbol)
             align2.append(s2[curr_j-1])
             curr_j -= 1
-
-    # Return as lists (reversed because we traced backwards)
     return align1[::-1], align2[::-1]
 
 def trace_needleman_wunsch(a, b, match_score=1, mismatch_penalty=-1, gap_penalty=-1, gap_symbol="-"):
     s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, match_score, mismatch_penalty, gap_penalty, local=False, maximize=True)
+    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=False, maximize=True)
     return _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local=False, gap_symbol=gap_symbol)
 
 def trace_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-1, gap_symbol="-"):
     s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, match_score, mismatch_penalty, gap_penalty, local=True, maximize=True)
+    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=True, maximize=True)
     return _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local=True, gap_symbol=gap_symbol)
 
-def _fill_dp_matrix(a, b, match_score, mismatch_penalty, gap_penalty, local, maximize):
-    s1 = to_list(a)
-    s2 = to_list(b)
-    matrix = _dp_matrix(s1, s2, match_score, mismatch_penalty, gap_penalty, local, maximize)
+def dist_lee(a, b, q=None):
+    a, b = to_list_numeric(a), to_list_numeric(b)
+    if q is None:
+        q = max(max(a), max(b)) + 1
+    distance = 0
+    for va, vb in zip(a, b):
+        diff = abs(va - vb)
+        distance += min(diff, q - diff)
+    return distance
+
+def _fill_dp_matrix(a, b, **kwargs):
+    s1, s2 = to_list(a), to_list(b)
+    matrix = _dp_matrix(s1, s2, **kwargs)
     header_row = [" ", " "] + [str(x) for x in s2]
     side_labels = [" ", " "] + [str(x) for x in s1]
     for i, row in enumerate(matrix):
@@ -564,17 +603,22 @@ def _fill_dp_matrix(a, b, match_score, mismatch_penalty, gap_penalty, local, max
     return matrix
 
 def matrix_levenshtein(a, b):
-    return _fill_dp_matrix(a, b, match_score=0, mismatch_penalty=1, gap_penalty=1, local=False, maximize=False)
+    return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=1, transpose=None, local=False, maximize=False)
+
+def matrix_damerau_levenshtein(a, b):
+    return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=1, transpose=1, local=False, maximize=False)
+
+def matrix_indel(a, b):
+    return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=None, transpose=None, local=False, maximize=False)
 
 def matrix_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-1):
-    return _fill_dp_matrix(a, b, match_score, mismatch_penalty, gap_penalty, local=True, maximize=True)
+    return _fill_dp_matrix(a, b, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=True, maximize=True)
 
 def matrix_needleman_wunsch(a, b, match_score=1, mismatch_penalty=-1, gap_penalty=-1):
-    return _fill_dp_matrix(a, b, match_score, mismatch_penalty, gap_penalty, local=False, maximize=True)
+    return _fill_dp_matrix(a, b, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=False, maximize=True)
 
 def matrix_lcs(a, b):
-    return _fill_dp_matrix(a, b, match_score=1, mismatch_penalty=0, gap_penalty=0, local=False, maximize=True)
-
+    return _fill_dp_matrix(a, b, insert=0, delete=0, substitute=None, match_score=1, local=False, maximize=True)
 # ------------------------------------------------------------------
 # Sequence metrics
 # ------------------------------------------------------------------
@@ -621,7 +665,12 @@ def sim_jaro(a, b) -> float:
             
     return (matches/len1 + matches/len2 + (matches - transpositions/2)/matches) / 3
 
+def dif_jaro(a, b) -> float:
+    return 1.0 - sim_jaro(a, b)
+
 def sim_jaro_winkler(a, b, p=0.1, max_l=4) -> float:
+    if p > 0.25:
+        raise ValueError("p should not exceed 0.25 to keep score within [0, 1]")
     s1, s2 = to_list(a), to_list(b)
     j = sim_jaro(s1, s2)
     l = 0
@@ -629,6 +678,9 @@ def sim_jaro_winkler(a, b, p=0.1, max_l=4) -> float:
         if char1 == char2: l += 1
         else: break
     return j + (l * p * (1 - j))
+
+def dif_jaro_winkler(a, b, p=0.1, max_l=4) -> float:
+    return 1 - sim_jaro_winkler(a, b, p, max_l)
 
 # ------------------------------------------------------------------
 # Frequency/Abundance Metrics (for Dicts or Counters)
@@ -676,6 +728,16 @@ METRICS = {
         'sim': sim_jaccard,
         'dif': dif_jaccard,
     },
+    'dice_sorensen': {
+        'default': 'sim',
+        'sim': sim_dice_sorensen,
+        'dif': dif_dice_sorensen,
+    },
+    'sorensen_dice': {
+        'default': 'sim',
+        'sim': sim_sorensen_dice,
+        'dif': dif_sorensen_dice,
+    },
     'dice': {
         'default': 'sim',
         'sim': sim_dice,
@@ -705,6 +767,35 @@ METRICS = {
         'default': 'sim',
         'sim': sim_ochiai,
         'dif': dif_ochiai,
+    },
+    'russel_rao': {
+        'default': 'sim',
+        'sim': sim_russel_rao,
+        'dif': dif_russel_rao,
+    },
+    'rogers_tanimoto': {
+        'default': 'sim',
+        'sim': sim_rogers_tanimoto,
+        'dif': dif_rogers_tanimoto,
+    },
+    'sokal_sneath': {
+        'default': 'sim',
+        'sim': sim_sokal_sneath,
+        'dif': dif_sokal_sneath,
+    },
+    'sokal_sneath1': {
+        'default': 'sim',
+        'sim': sim_sokal_sneath1,
+        'dif': dif_sokal_sneath1,
+    },
+    'sokal_sneath2': {
+        'default': 'sim',
+        'sim': sim_sokal_sneath2,
+        'dif': dif_sokal_sneath2,
+    },
+    'sokal_sneath3': {
+        'default': 'sim',
+        'sim': sim_sokal_sneath3,
     },
 
     'cosine': {
@@ -773,6 +864,16 @@ METRICS = {
         'sim': sim_monge_elkan,
     },
 
+    'damerau_levenshtein': {
+        'default': 'dist',
+        'dist': dist_damerau_levenshtein,
+     },
+
+    'lee': {
+        'default': 'dist',
+        'dist': dist_lee,
+    },
+
     'lcs': {
         'default': 'score',
         'score': score_lcs,
@@ -783,11 +884,13 @@ METRICS = {
     'jaro': {
         'default': 'sim',
         'sim': sim_jaro,
+        'dif': dif_jaro,
     },
 
     'jaro_winkler': {
         'default': 'sim',
         'sim': sim_jaro_winkler,
+        'dif': dif_jaro_winkler,
     },
 
     'bray_curtis': {
