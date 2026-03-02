@@ -1,5 +1,6 @@
-from ..simdif import METRICS, to_list
+from ..simdif import Metric, METRICS, to_list
 import sys
+
 
 def _dl_matrix(s1, s2) -> list:
     """
@@ -8,15 +9,9 @@ def _dl_matrix(s1, s2) -> list:
     overlapping transpositions. Satisfies the triangle inequality, unlike OSA.
     """
     len1, len2 = len(s1), len(s2)
-
-    # last_row[c] = last row index (1-based) where character c appeared in s1
     last_row = {}
-
-    # Working matrix is (len1+2) x (len2+2) — extra row/col for the sentinel
     INF = len1 + len2 + 1
     matrix = [[0] * (len2 + 2) for _ in range(len1 + 2)]
-
-    # Sentinel row and column
     matrix[0][0] = INF
     for i in range(len1 + 1):
         matrix[i + 1][0] = INF
@@ -26,17 +21,15 @@ def _dl_matrix(s1, s2) -> list:
         matrix[1][j + 1] = j
 
     for i in range(1, len1 + 1):
-        last_col = 0  # last column index (1-based) where s1[i-1] appeared in s2
+        last_col = 0
         for j in range(1, len2 + 1):
-            i1 = last_row.get(s2[j - 1], 0)  # last row s2[j-1] appeared in s1
-            j1 = last_col                      # last col s1[i-1] appeared in s2
-
+            i1 = last_row.get(s2[j - 1], 0)
+            j1 = last_col
             if s1[i - 1] == s2[j - 1]:
                 cost = 0
                 last_col = j
             else:
                 cost = 1
-
             matrix[i + 1][j + 1] = min(
                 matrix[i][j] + cost,           # substitute (or match)
                 matrix[i + 1][j] + 1,          # insert
@@ -50,6 +43,7 @@ def _dl_matrix(s1, s2) -> list:
         last_row[s1[i - 1]] = i
 
     return matrix
+
 
 def info_damerau_levenshtein() -> str:
     return """
@@ -71,14 +65,13 @@ cases, OSA is a reasonable approximation. Use this when correctness and the
 triangle inequality are required.
 Aliases: Damerau-Levenshtein, DL
     """.strip()
-
 info_dl = info_damerau_levenshtein
+
 
 def explain_damerau_levenshtein(a, b, **_) -> str:
     s1, s2 = to_list(a), to_list(b)
     matrix = _dl_matrix(s1, s2)
     dist = matrix[len(s1) + 1][len(s2) + 1]
-    # Build display matrix (trim sentinel row/col for readability)
     header = "      " + "  ".join(f"'{c}'" for c in ['_'] + list(s2))
     rows_display = []
     labels = ['_'] + list(s1)
@@ -93,20 +86,21 @@ Damerau-Levenshtein Distance (true, unrestricted):
 """ + "\n".join(rows_display) + f"""
 Distance: {dist}
     """.strip()
-
 explain_dl = explain_damerau_levenshtein
 
+
+@Metric
 def dist_damerau_levenshtein(a, b, **_) -> float:
     if isinstance(a, str) and isinstance(b, str) and 'rapidfuzz' in sys.modules:
         # rapidfuzz implements true DL, not OSA
         return float(sys.modules['rapidfuzz'].distance.DamerauLevenshtein.distance(a, b))
     s1, s2 = to_list(a), to_list(b)
     return float(_dl_matrix(s1, s2)[len(s1) + 1][len(s2) + 1])
-
 dist_dl = dist_damerau_levenshtein
 
+
 METRICS['damerau_levenshtein'] = {
-    'class': 'string',
+    'class': 'sequence',
     'default': 'dist',
     'dist': dist_damerau_levenshtein,
     'info': info_damerau_levenshtein,

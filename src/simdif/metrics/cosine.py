@@ -1,5 +1,6 @@
-from ..simdif import METRICS, to_list_numeric
+from ..simdif import Metric, METRICS, to_list_numeric
 import sys
+
 
 def info_cosine() -> str:
     return """
@@ -21,6 +22,7 @@ Distance:   [0, 2]  — 1 - similarity (standard cosine distance)
 Note: For binary/set data, use cosine_set instead, which is equivalent
 to the Ochiai coefficient.
     """.strip()
+
 
 def explain_cosine(a, b, **_) -> str:
     a, b = to_list_numeric(a), to_list_numeric(b)
@@ -46,6 +48,8 @@ Difference: {dif_cosine(a, b):.4f}
 Distance:   {dist_cosine(a, b):.4f}
     """.strip()
 
+
+@Metric
 def sim_cosine(a, b, **_) -> float:
     a, b = to_list_numeric(a), to_list_numeric(b)
     if len(a) != len(b):
@@ -64,8 +68,11 @@ def sim_cosine(a, b, **_) -> float:
         return 0.0
     return max(-1.0, min(1.0, dot / (norm_a * norm_b)))
 
+
+@Metric
 def dist_cosine(a, b, **_) -> float:
     return 1 - sim_cosine(a, b)
+
 
 METRICS['cosine'] = {
     'class': 'vector',

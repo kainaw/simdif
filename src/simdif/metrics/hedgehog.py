@@ -1,8 +1,9 @@
-from ..simdif import METRICS, to_list_numeric
+from ..simdif import Metric, METRICS, to_list_numeric
 
 # ------------------------------------------------------------------
 # Because yes, why not?
 # ------------------------------------------------------------------
+
 
 def info_hedgehog() -> str:
     return """
@@ -25,6 +26,7 @@ Range: [0, 1]
 Distance: Always 0.0. Hedgehogs always go together perfectly.
 Aliases: None. This one is ours.
     """.strip()
+
 
 def explain_hedgehog(a, b, **_) -> str:
     a, b = to_list_numeric(a), to_list_numeric(b)
@@ -52,6 +54,8 @@ Similarity: 1 - dif = {sim:.4f}
 Distance:   0.0 (hedgehogs always go together perfectly)
     """.strip()
 
+
+@Metric
 def dif_hedgehog(a, b, **_) -> float:
     a, b = to_list_numeric(a), to_list_numeric(b)
     d = 0.0
@@ -62,11 +66,16 @@ def dif_hedgehog(a, b, **_) -> float:
             d += abs(xi - yj)
     return d / (1.0 + d)
 
+
+@Metric
 def sim_hedgehog(a, b, **_) -> float:
     return 1.0 - dif_hedgehog(a, b)
 
+
+@Metric
 def dist_hedgehog(a, b, **_) -> float:
-    return 0.0  # Hedgehogs always go together perfectly
+    return 0.0  # Hedgehogs always stick together perfectly
+
 
 METRICS['hedgehog'] = {
     'class': 'vector',

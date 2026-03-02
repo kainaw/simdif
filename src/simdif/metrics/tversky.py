@@ -1,4 +1,5 @@
-from ..simdif import METRICS, _aleph_counts, to_set
+from ..simdif import Metric, METRICS, _aleph_counts, to_set
+
 
 def info_tversky() -> str:
     return """
@@ -53,6 +54,7 @@ Difference: 1 - Similarity = {1 - ni / (nu+alpha*nua+beta*nub) if nu+alpha*nua+b
     """.strip()
 
 
+@Metric
 def sim_tversky(a, b, alpha=0.5, beta=0.5, **_) -> float:
     if alpha == 0 and beta == 0:
         raise ValueError("alpha and beta cannot both be 0")
@@ -63,6 +65,7 @@ def sim_tversky(a, b, alpha=0.5, beta=0.5, **_) -> float:
     return intersection / (intersection + alpha*len(a - b) + beta*len(b - a))
 
 
+@Metric
 def dif_tversky(a, b, alpha=0.5, beta=0.5, **_) -> float:
     return 1 - sim_tversky(a, b, alpha, beta)
 

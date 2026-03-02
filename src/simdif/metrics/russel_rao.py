@@ -1,4 +1,5 @@
-from ..simdif import METRICS, _aleph_counts, to_set
+from ..simdif import Metric, METRICS, _aleph_counts, to_set
+
 
 def info_russel_rao() -> str:
     return """
@@ -18,6 +19,7 @@ Aliases: Russell-Rao (common misspelling), RR
     """.strip()
 info_russell_rao = info_russel_rao
 info_rr = info_russel_rao
+
 
 def explain_russel_rao(a, b, n_universe=None, **_) -> str:
     a_set, b_set = to_set(a), to_set(b)
@@ -44,6 +46,8 @@ Difference: 1 - Sim = {1 - sim:.4f}
 explain_russell_rao = explain_russel_rao
 explain_rr = explain_russel_rao
 
+
+@Metric
 def sim_russel_rao(a, b, n_universe=None, **_) -> float:
     n00, n01, n10, n11 = _aleph_counts(a, b, n_universe)
     if (n11 + n10 + n01 + n00) == 0:
@@ -53,6 +57,7 @@ sim_russell_rao = sim_russel_rao
 sim_rr = sim_russel_rao
 
 
+@Metric
 def dif_russel_rao(a, b, n_universe=None, **_) -> float:
     return 1 - sim_russel_rao(a, b, n_universe)
 dif_russell_rao = dif_russel_rao

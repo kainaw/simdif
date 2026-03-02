@@ -1,4 +1,5 @@
-from ..simdif import METRICS, _aleph_counts, to_set
+from ..simdif import Metric, METRICS, _aleph_counts, to_set
+
 
 def info_overlap() -> str:
     return """
@@ -23,6 +24,7 @@ Aliases: Szymkiewicz–Simpson, Simpson
 info_szymkiewicz_simpson = info_overlap
 info_simpson = info_overlap
 
+
 def explain_overlap(a, b, **_) -> str:
     a, b = to_set(a), to_set(b)
     i = sorted(map(str, a & b))
@@ -42,6 +44,7 @@ explain_szymkiewicz_simpson = explain_overlap
 explain_simpson = explain_overlap
 
 
+@Metric
 def sim_overlap(a, b, **_) -> float:
     a, b = to_set(a), to_set(b)
     if len(a) == 0 and len(b) == 0:
@@ -54,6 +57,7 @@ sim_szymkiewicz_simpson = sim_overlap
 sim_simpson = sim_overlap
 
 
+@Metric
 def dif_overlap(a, b, **_) -> float:
     return 1 - sim_overlap(a, b)
 dif_szymkiewicz_simpson = dif_overlap

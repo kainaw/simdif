@@ -25,7 +25,48 @@ import math
 import numbers
 import sys
 import os
-_DEFINITIONS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "definitions.txt")
+from functools import wraps
+
+
+# ------------------------------------------------------------------
+# Composite Metric Functionality
+# ------------------------------------------------------------------
+
+class Metric:
+    """
+    This allows you to build composite metrics like:
+    myfunc = 2*sim_jaccard - sim_cosine + 0.4 dist_hamming
+    """
+    def __init__(self, func):
+        self.func = func
+        wraps(func)(self)
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+    def _wrap_operand(self, other):
+        if isinstance(other, Metric) or callable(other):
+            return other
+        return lambda *args, **kwargs: other
+    def __add__(self, other):
+        other_fn = self._wrap_operand(other)
+        return Metric(lambda *a, **k: self(*a, **k) + other_fn(*a, **k))
+    def __sub__(self, other):
+        other_fn = self._wrap_operand(other)
+        return Metric(lambda *a, **k: self(*a, **k) - other_fn(*a, **k))
+    def __mul__(self, other):
+        other_fn = self._wrap_operand(other)
+        return Metric(lambda *a, **k: self(*a, **k) * other_fn(*a, **k))
+    def __truediv__(self, other):
+        other_fn = self._wrap_operand(other)
+        return Metric(lambda *a, **k: self(*a, **k) / other_fn(*a, **k))
+    def __radd__(self, other): return self.__add__(other)
+    def __rsub__(self, other):
+        other_fn = self._wrap_operand(other)
+        return Metric(lambda *a, **k: other_fn(*a, **k) - self(*a, **k))
+    def __rmul__(self, other): return self.__mul__(other)
+    def __rtruediv__(self, other):
+        other_fn = self._wrap_operand(other)
+        return Metric(lambda *a, **k: other_fn(*a, **k) / self(*a, **k))
+
 
 # ------------------------------------------------------------------
 # Helpers
@@ -238,35 +279,6 @@ def _aleph_counts(a, b, n_universe=0):
 # Vector Metrics
 # ------------------------------------------------------------------
 
-def dist_hamming(a, b, binary=False) -> int:
-    if binary:
-        if not isinstance(a, int) or not isinstance(b, int):
-            raise TypeError("binary=True requires integer inputs")
-        width = max(a.bit_length(), b.bit_length())
-        a, b = to_binary(a, width), to_binary(b, width)
-    else:
-        a, b = to_list(a), to_list(b)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
-    return sum(x != y for x, y in zip(a, b))
-
-def sim_hamming(a, b, binary=False) -> float:
-    if binary:
-        if not isinstance(a, int) or not isinstance(b, int):
-            raise TypeError("binary=True requires integer inputs")
-        width = max(a.bit_length(), b.bit_length())
-        a, b = to_binary(a, width), to_binary(b, width)
-    else:
-        a, b = to_list(a), to_list(b)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
-    if len(a) == 0:
-        return 1.0
-    return 1 - (dist_hamming(a, b) / len(a))
-
-def dif_hamming(a, b, binary=False) -> float:
-    return 1 - sim_hamming(a, b, binary)
-
 def sim_tanimoto(a, b, binary=False) -> float:
     if binary:
         if not isinstance(a, int) or not isinstance(b, int):
@@ -289,41 +301,12 @@ def dif_tanimoto(a, b, binary=False) -> float:
 # Distance metrics
 # ------------------------------------------------------------------
 
-def dist_minkowski(a, b, p=None) -> float:
-    if p is None:
-        raise TypeError("dist_minkowski() missing 1 required positional argument: 'p'")
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
-    if 'scipy' in sys.modules:
-        from scipy.spatial import distance
-        return float(distance.minkowski(a, b, p))
-    return sum(abs(x - y) ** p for x, y in zip(a, b)) ** (1/p)
-
-dist_euclidean = lambda a, b: dist_minkowski(a, b, p=2)
-dist_manhattan = lambda a, b: dist_minkowski(a, b, p=1)
-dist_taxicab = dist_manhattan
-dist_cityblock = dist_manhattan
-
 def dist_chebyshev(a, b) -> float:
     a, b = to_list_numeric(a), to_list_numeric(b)
     if len(a) != len(b): raise ValueError("Length mismatch")
     return max(abs(x - y) for x, y in zip(a, b))
-    
 dist_chessboard = dist_chebyshev
 dist_linf = dist_chebyshev
-
-def dist_canberra(a, b) -> float:
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b): 
-        raise ValueError("Length mismatch")
-    score = 0.0
-    for x, y in zip(a, b):
-        denominator = abs(x) + abs(y)
-        if denominator > 0:
-            score += abs(x - y) / denominator
-    return score
-
 
 def dist_kl_divergence(a, b) -> float:
     a = _to_distribution(a, "a")
@@ -572,49 +555,16 @@ def dif_jaro_winkler(a, b, p=0.1, max_l=4) -> float:
 # Frequency/Abundance Metrics (for Dicts or Counters)
 # ------------------------------------------------------------------
 
-def dist_bray_curtis(a, b) -> float:
-    v1, v2 = to_list_numeric(a), to_list_numeric(b)
-    if len(v1) != len(v2):
-        raise ValueError("Vector length mismatch")
-    
-    diff_sum = sum(abs(x - y) for x, y in zip(v1, v2))
-    total_sum = sum(abs(x + y) for x, y in zip(v1, v2))
-    
-    return diff_sum / total_sum if total_sum != 0 else 0.0
-
-
 METRICS = {
-    'hamming': {
-        'default': 'dist',
-        'dist': dist_hamming,
-        'sim': sim_hamming,
-        'dif': dif_hamming,
-    },
     'tanimoto': {
         'default': 'sim',
         'sim': sim_tanimoto,
         'dif': dif_tanimoto,
     },
 
-    'minkowski': {
-        'default': 'dist',
-        'dist': dist_minkowski,
-    },
-    'euclidean': {
-        'default': 'dist',
-        'dist': dist_euclidean,
-    },
-    'manhattan': {
-        'default': 'dist',
-        'dist': dist_manhattan,
-    },
     'chebyshev': {
         'default': 'dist',
         'dist': dist_chebyshev,
-    },
-    'canberra': {
-        'default':'dist',
-        'dist': dist_canberra,
     },
 
     'kl_divergence': {
@@ -689,11 +639,6 @@ METRICS = {
         'default': 'sim',
         'sim': sim_jaro_winkler,
         'dif': dif_jaro_winkler,
-    },
-
-    'bray_curtis': {
-        'default': 'dist',
-        'dist': dist_bray_curtis,
     },
 }
 

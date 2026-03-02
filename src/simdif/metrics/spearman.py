@@ -1,6 +1,7 @@
-from ..simdif import METRICS, to_list_numeric, _rank
+from ..simdif import Metric, METRICS, to_list_numeric, _rank
 from .pearson import sim_pearson
 import sys
+
 
 def info_spearman() -> str:
     return """
@@ -23,6 +24,7 @@ rank. Use Pearson when you expect a linear relationship; use Spearman when
 you expect a monotonic but possibly non-linear one.
     """.strip()
 
+
 def explain_spearman(a, b, **_) -> str:
     a, b = to_list_numeric(a), to_list_numeric(b)
     if len(a) != len(b):
@@ -43,6 +45,8 @@ Pearson applied to ranks:
 Distance: 1 - ρ = {dist_spearman(a, b):.4f}
     """.strip()
 
+
+@Metric
 def sim_spearman(a, b, **_) -> float:
     a, b = to_list_numeric(a), to_list_numeric(b)
     if len(a) != len(b):
@@ -51,11 +55,14 @@ def sim_spearman(a, b, **_) -> float:
         raise ValueError(f"Spearman requires at least 2 elements, got {len(a)}")
     return sim_pearson(_rank(a), _rank(b))
 
+
+@Metric
 def dist_spearman(a, b, **_) -> float:
     return 1 - sim_spearman(a, b)
 
+
 METRICS['spearman'] = {
-    'class': 'vector',
+    'class': 'sequence',
     'default': 'sim',
     'sim': sim_spearman,
     'dist': dist_spearman,

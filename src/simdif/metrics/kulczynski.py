@@ -1,4 +1,5 @@
-from ..simdif import METRICS, to_set
+from ..simdif import Metric, METRICS, to_set
+
 
 def info_kulczynski() -> str:
     return """
@@ -15,8 +16,8 @@ Range: [0, 1]
     0 = no shared elements (or one set is empty)
 Aliases: Kulczynski, Kulczynski II
     """.strip()
-
 info_kulczynski_ii = info_kulczynski
+
 
 def explain_kulczynski(a, b, **_) -> str:
     a_set, b_set = to_set(a), to_set(b)
@@ -48,9 +49,10 @@ Calculation:
 = {sim:.4f}
 Difference: 1 - Sim = {1 - sim:.4f}
     """.strip()
-
 explain_kulczynski_ii = explain_kulczynski
 
+
+@Metric
 def sim_kulczynski(a, b, **_) -> float:
     a, b = to_set(a), to_set(b)
     if len(a) == 0 and len(b) == 0:
@@ -59,13 +61,14 @@ def sim_kulczynski(a, b, **_) -> float:
         return 0.0
     i = len(a & b)
     return (i / 2) * (1/len(a) + 1/len(b))
-
 sim_kulczynski_ii = sim_kulczynski
 
+
+@Metric
 def dif_kulczynski(a, b, **_) -> float:
     return 1 - sim_kulczynski(a, b)
-
 dif_kulczynski_ii = dif_kulczynski
+
 
 METRICS['kulczynski'] = {
     'class': 'set',

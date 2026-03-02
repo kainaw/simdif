@@ -1,4 +1,5 @@
-from ..simdif import METRICS, _aleph_counts, to_set
+from ..simdif import Metric, METRICS, _aleph_counts, to_set
+
 
 def info_cosine_set() -> str:
     return """
@@ -39,7 +40,6 @@ def explain_cosine_set(a, b, **_) -> str:
 A: ({", ".join(a_list)}), length {na}
 B: ({", ".join(b_list)}), length {nb}
 Intersection: ({", ".join(i_list)}), length {ni}
-
 Formula: |A ∩ B| / sqrt(|A| * |B|)
 Calculation: {calc_str}
 Similarity: {sim:.4f}
@@ -48,6 +48,7 @@ Difference: 1 - Similarity = {1.0 - sim:.4f}
 explain_ochiai = explain_cosine_set
 
 
+@Metric
 def sim_cosine_set(a, b, **_) -> float:
     a, b = to_set(a), to_set(b)
     if len(a) == 0 and len(b) == 0:
@@ -58,6 +59,7 @@ def sim_cosine_set(a, b, **_) -> float:
 sim_ochiai = sim_cosine_set
 
 
+@Metric
 def dif_cosine_set(a, b, **_) -> float:
     return 1 - sim_cosine_set(a, b)
 dif_ochiai = dif_cosine_set

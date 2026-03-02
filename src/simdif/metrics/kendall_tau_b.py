@@ -1,5 +1,6 @@
-from ..simdif import METRICS, to_list_numeric
+from ..simdif import Metric, METRICS, to_list_numeric
 import sys
+
 
 def info_kendall_tau_b() -> str:
     return """
@@ -25,6 +26,7 @@ Note: A pair can be tied in both A and B simultaneously — T_a and T_b are
 counted independently. If scipy is available, scipy.stats.kendalltau is used.
     """.strip()
 info_tau_b = info_kendall_tau_b
+
 
 def explain_kendall_tau_b(a, b, **_) -> str:
     a, b = to_list_numeric(a), to_list_numeric(b)
@@ -70,9 +72,10 @@ Calculation:
 = {sim:.4f}
 Distance: 1 - τ_b = {dist_kendall_tau_b(a, b):.4f}
     """.strip()
-
 explain_tau_b = explain_kendall_tau_b
 
+
+@Metric
 def sim_kendall_tau_b(a, b, **_) -> float:
     a, b = to_list_numeric(a), to_list_numeric(b)
     if len(a) != len(b):
@@ -104,12 +107,15 @@ def sim_kendall_tau_b(a, b, **_) -> float:
     return (concordant - discordant) / denom
 sim_tau_b = sim_kendall_tau_b
 
+
+@Metric
 def dist_kendall_tau_b(a, b, **_) -> float:
     return 1 - sim_kendall_tau_b(a, b)
 dist_tau_b = dist_kendall_tau_b
 
+
 METRICS['kendall_tau_b'] = {
-    'class': 'vector',
+    'class': 'sequence',
     'default': 'sim',
     'sim': sim_kendall_tau_b,
     'dist': dist_kendall_tau_b,

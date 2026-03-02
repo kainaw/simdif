@@ -1,4 +1,5 @@
-from ..simdif import METRICS, _aleph_counts, to_set
+from ..simdif import Metric, METRICS, _aleph_counts, to_set
+
 
 def info_rogers_tanimoto() -> str:
     return """
@@ -15,6 +16,7 @@ Aliases: Sokal II, Sokal-Michener II, Sokal-Sneath II
 info_sokal_ii = info_rogers_tanimoto
 info_sokal_michener_ii = info_rogers_tanimoto
 info_sokal_sneath_ii = info_rogers_tanimoto
+
 
 def explain_rogers_tanimoto(a, b, n_universe=None, **_) -> str:
     a_set, b_set = to_set(a), to_set(b)
@@ -38,6 +40,8 @@ explain_sokal_ii = explain_rogers_tanimoto
 explain_sokal_michener_ii = explain_rogers_tanimoto
 explain_sokal_sneath_ii = explain_rogers_tanimoto
 
+
+@Metric
 def sim_rogers_tanimoto(a, b, n_universe=None, **_) -> float:
     n00, n01, n10, n11 = _aleph_counts(a, b, n_universe)
     denominator = n11 + 2 * (n10 + n01) + n00
@@ -48,11 +52,14 @@ sim_sokal_ii = sim_rogers_tanimoto
 sim_sokal_michener_ii = sim_rogers_tanimoto
 sim_sokal_sneath_ii = sim_rogers_tanimoto
 
+
+@Metric
 def dif_rogers_tanimoto(a, b, n_universe=None, **_) -> float:
     return 1 - sim_rogers_tanimoto(a, b, n_universe)
 dif_sokal_ii = dif_rogers_tanimoto
 dif_sokal_michener_ii = dif_rogers_tanimoto
 dif_sokal_sneath_ii = dif_rogers_tanimoto
+
 
 METRICS['rogers_tanimoto'] = {
     'class': 'set',

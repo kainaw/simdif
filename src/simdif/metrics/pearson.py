@@ -1,5 +1,6 @@
-from ..simdif import METRICS, to_list_numeric
+from ..simdif import Metric, METRICS, to_list_numeric
 import sys
+
 
 def info_pearson() -> str:
     return """
@@ -22,6 +23,7 @@ variance (all elements identical). Pearson is to cosine what mean-centering
 is to raw vectors — use cosine if you want magnitude-sensitive comparison,
 Pearson if you want to compare shape/trend regardless of offset.
     """.strip()
+
 
 def explain_pearson(a, b, **_) -> str:
     a, b = to_list_numeric(a), to_list_numeric(b)
@@ -56,6 +58,8 @@ Calculation:
 Distance: 1 - r = {dist_pearson(a, b):.4f}
     """.strip()
 
+
+@Metric
 def sim_pearson(a, b, **_) -> float:
     a, b = to_list_numeric(a), to_list_numeric(b)
     if len(a) != len(b):
@@ -76,8 +80,11 @@ def sim_pearson(a, b, **_) -> float:
         return 0.0
     return max(-1.0, min(1.0, numerator / (denom_a * denom_b)))
 
+
+@Metric
 def dist_pearson(a, b, **_) -> float:
     return 1 - sim_pearson(a, b)
+
 
 METRICS['pearson'] = {
     'class': 'vector',

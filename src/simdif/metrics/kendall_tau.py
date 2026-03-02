@@ -1,5 +1,6 @@
-from ..simdif import METRICS, to_list_numeric
+from ..simdif import Metric, METRICS, to_list_numeric
 import sys
+
 
 def info_kendall_tau() -> str:
     return """
@@ -68,6 +69,7 @@ explain_kendall_tau_a = explain_kendall_tau
 explain_tau_a = explain_kendall_tau
 
 
+@Metric
 def sim_kendall_tau(a, b, **_) -> float:
     a, b = to_list_numeric(a), to_list_numeric(b)
     if len(a) != len(b):
@@ -92,6 +94,7 @@ sim_kendall_tau_a = sim_kendall_tau
 sim_tau_a = sim_kendall_tau
 
 
+@Metric
 def dist_kendall_tau(a, b, **_) -> float:
     return 1 - sim_kendall_tau(a, b)
 dist_kendall_tau_a = dist_kendall_tau
@@ -99,7 +102,7 @@ dist_tau_a = dist_kendall_tau
 
 
 METRICS['kendall_tau'] = {
-    'class': 'vector',
+    'class': 'sequence',
     'default': 'sim',
     'sim': sim_kendall_tau,
     'dist': dist_kendall_tau,

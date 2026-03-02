@@ -1,4 +1,5 @@
-from ..simdif import METRICS, _aleph_counts, to_set
+from ..simdif import Metric, METRICS, _aleph_counts, to_set
+
 
 def info_jaccard() -> str:
     return """
@@ -43,6 +44,7 @@ Difference: 1 - Similarity = {1 - ni / nu if nu>0 else 'Division by Zero'}
 explain_iou = explain_jaccard
 
 
+@Metric
 def sim_jaccard(a, b, **_) -> float:
     n00, n01, n10, n11 = _aleph_counts(a, b)
     if (n11 + n10 + n01) == 0:
@@ -51,6 +53,7 @@ def sim_jaccard(a, b, **_) -> float:
 sim_iou = sim_jaccard
 
 
+@Metric
 def dif_jaccard(a, b, **_) -> float:
     return 1 - sim_jaccard(a, b)
 dif_iou = dif_jaccard

@@ -1,4 +1,5 @@
-from ..simdif import METRICS, to_set, _aleph_counts
+from ..simdif import Metric, METRICS, to_set, _aleph_counts
+
 
 def info_smc() -> str:
     return """
@@ -48,6 +49,7 @@ Difference: 1 - Sim = {1 - sim:.4f}
 explain_sokal_michener = explain_smc
 
 
+@Metric
 def sim_smc(a, b, n_universe=None) -> float:
     n00, n01, n10, n11 = _aleph_counts(a, b, n_universe)
     if (n11 + n10 + n01 + n00) == 0:
@@ -56,6 +58,7 @@ def sim_smc(a, b, n_universe=None) -> float:
 sim_sokal_michener = sim_smc
 
 
+@Metric
 def dif_smc(a, b, n_universe=None) -> float:
     return 1.0 - sim_smc(a, b, n_universe)
 dif_sokal_michener = dif_smc
