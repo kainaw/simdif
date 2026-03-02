@@ -60,6 +60,7 @@ dif_rr = dif_russel_rao
 
 
 METRICS['russel_rao'] = {
+    'class': 'set',
     'default': 'sim',
     'sim': sim_russel_rao,
     'dif': dif_russel_rao,

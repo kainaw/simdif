@@ -31,7 +31,7 @@ _DEFINITIONS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "de
 # Helpers
 # ------------------------------------------------------------------
 
-VALID_PREFIXES = {'sim', 'dif', 'dist', 'score', 'trace','matrix'}
+VALID_PREFIXES = {'sim', 'dif', 'dist', 'score', 'trace','matrix', 'explain', 'info'}
 
 
 def _resolve_metric(name: str):
@@ -107,6 +107,24 @@ def matrix(a, b, metric, **kwargs):
         return {m: matrix(a, b, m, **kwargs) for m in metric}
     role, func, base = _resolve_metric("matrix_"+metric)
     if role != 'matrix':
+        raise ValueError(f"Metric '{metric}' is a '{role}', not a trace metric")
+    return func(a, b, **kwargs)
+
+
+def info(a, b, metric, **kwargs):
+    if isinstance(metric, (list, tuple, set)):
+        return {m: info(a, b, m, **kwargs) for m in metric}
+    role, func, base = _resolve_metric("info_"+metric)
+    if role != 'info':
+        raise ValueError(f"Metric '{metric}' is a '{role}', not a trace metric")
+    return func(a, b, **kwargs)
+
+
+def explain(a, b, metric, **kwargs):
+    if isinstance(metric, (list, tuple, set)):
+        return {m: explain(a, b, m, **kwargs) for m in metric}
+    role, func, base = _resolve_metric("explain_"+metric)
+    if role != 'explain':
         raise ValueError(f"Metric '{metric}' is a '{role}', not a trace metric")
     return func(a, b, **kwargs)
 
@@ -217,180 +235,8 @@ def _aleph_counts(a, b, n_universe=0):
 
 
 # ------------------------------------------------------------------
-# Set Metrics
-# ------------------------------------------------------------------
-
-
-def sim_sokal_sneath(a, b) -> float:
-    """
-    Sokal-Sneath I
-    """
-    a, b = to_set(a), to_set(b)
-    if len(a) == 0 and len(b) == 0:
-        return 1.0
-    intersection = len(a & b)
-    non_shared = len(a | b) - intersection
-    return (2 * intersection) / (2 * intersection + non_shared)
-
-def dif_sokal_sneath(a, b) -> float:
-    return 1.0 - sim_sokal_sneath(a, b)
-
-sim_sokal_sneath1 = sim_sokal_sneath
-dif_sokal_sneath1 = dif_sokal_sneath
-sim_sokal_sneath2 = sim_rogers_tanimoto
-dif_sokal_sneath2 = dif_rogers_tanimoto
-
-def sim_sokal_sneath3(a, b) -> float:
-    """
-    Sokal-Sneath III coefficient.
-    Range is [0, ∞) — higher means more similar.
-    No dif equivalent due to unbounded range.
-    """
-    a, b = to_set(a), to_set(b)
-    if len(a) == 0 and len(b) == 0:
-        return 1.0
-    non_shared = len(a | b) - len(a & b)
-    if non_shared == 0:
-        return float('inf')
-    return len(a & b) / non_shared
-
-def sim_smc(a, b, n_universe) -> float:
-    n00, n01, n10, n11 = _aleph_counts(a, b, n_universe)
-    if (n11 + n10 + n01 + n00) == 0:
-        return 1.0
-    return (n11 + n00) / (n11 + n10 + n01 + n00)
-
-def dif_smc(a, b, n_universe) -> float:
-    return 1.0 - sim_smc
-
-# ------------------------------------------------------------------
 # Vector Metrics
 # ------------------------------------------------------------------
-
-def sim_cosine(a, b) -> float:
-    """
-    Compute cosine similarity between two numeric vectors.
-
-    Cosine similarity measures the angle between vectors:
-        dot(a, b) / (||a|| * ||b||)
-
-    Parameters
-    ----------
-    a : sequence of numbers
-        First numeric vector.
-    b : sequence of numbers
-        Second numeric vector.
-
-    Returns
-    -------
-    float
-        A value between -1 and 1, where 1 means identical direction,
-        0 means orthogonal, and -1 means opposite direction.
-    """
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
-    if len(a) == 0 and len(b) == 0:
-        return 1.0
-    if 'scipy' in sys.modules:
-        from scipy.spatial import distance
-        return 1.0 - float(distance.cosine(a, b))
-    dot = sum(x * y for x, y in zip(a, b))
-    norm_a = sum(x * x for x in a) ** 0.5
-    norm_b = sum(y * y for y in b) ** 0.5
-    if norm_a == 0 and norm_b == 0:
-        return 1.0
-    if norm_a == 0 or norm_b == 0:
-        return 0.0
-    res = dot / (norm_a * norm_b)
-    return max(-1.0, min(1.0, res))
-
-def dif_cosine(a, b) -> float:
-    sim = sim_cosine(a, b)
-    return -1 - sim if sim < 0 else 1 - sim
-
-def dist_cosine(a, b) -> float:
-    return 1 - sim_cosine(a, b)
-
-
-def sim_pearson(a, b) -> float:
-    a, b = to_list_num(a), to_list_num(b)
-    if len(a) != len(b):
-        raise ValueError(f"Sequences must be the same length, got {len(a)} and {len(b)}")
-    if len(a) < 2:
-        raise ValueError(f"Pearson requires at least 2 elements, got {len(a)}")
-    n = len(a)
-    mean_a = sum(a) / n
-    mean_b = sum(b) / n
-    numerator = sum((x - mean_a) * (y - mean_b) for x, y in zip(a, b))
-    denom_a = sum((x - mean_a) ** 2 for x in a) ** 0.5
-    denom_b = sum((y - mean_b) ** 2 for y in b) ** 0.5
-    if denom_a == 0 or denom_b == 0:
-        return 0.0
-    return numerator / (denom_a * denom_b)
-
-
-def sim_spearman(a, b) -> float:
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b):
-        raise ValueError(f"Sequences must be the same length, got {len(a)} and {len(b)}")
-    if len(a) < 2:
-        raise ValueError(f"Spearman requires at least 2 elements, got {len(a)}")
-    return sim_pearson(_rank(a), _rank(b))
-
-
-def sim_kendall_tau(a, b) -> float:
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b):
-        raise ValueError(f"Sequences must be the same length, got {len(a)} and {len(b)}")
-    if len(a) < 2:
-        raise ValueError(f"Kendall's Tau requires at least 2 elements, got {len(a)}")
-    n = len(a)
-    concordant = 0
-    discordant = 0
-    for i in range(n):
-        for j in range(i + 1, n):
-            a_dir = a[i] - a[j]
-            b_dir = b[i] - b[j]
-            if a_dir * b_dir > 0:
-                concordant += 1
-            elif a_dir * b_dir < 0:
-                discordant += 1
-            # if either is 0, it's a tie — we ignore it (Tau-b handles ties differently)
-    total = n * (n - 1) // 2
-    return (concordant - discordant) / total
-sim_kendall_tau_a = sim_kendall_tau
-sim_tau_a = sim_kendall_tau
-
-def sim_kendall_tau_b(a, b) -> float:
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b):
-        raise ValueError(f"Sequences must be the same length, got {len(a)} and {len(b)}")
-    if len(a) < 2:
-        raise ValueError(f"Kendall's Tau-b requires at least 2 elements, got {len(a)}")
-    n = len(a)
-    concordant = 0
-    discordant = 0
-    ties_a = 0
-    ties_b = 0
-    for i in range(n):
-        for j in range(i + 1, n):
-            a_dir = a[i] - a[j]
-            b_dir = b[i] - b[j]
-            if a_dir == 0:
-                ties_a += 1
-            if b_dir == 0:
-                ties_b += 1
-            if a_dir * b_dir > 0:
-                concordant += 1
-            elif a_dir * b_dir < 0:
-                discordant += 1
-    total = n * (n - 1) // 2
-    denominator = ((total - ties_a) * (total - ties_b)) ** 0.5
-    if denominator == 0:
-        return 0.0
-    return (concordant - discordant) / denominator
-sim_tau_b=sim_kendall_tau_b
 
 def dist_hamming(a, b, binary=False) -> int:
     if binary:
@@ -538,7 +384,7 @@ def dist_indel(a, b) -> int:
     s1, s2 = to_list(a), to_list(b)
     return _dp_matrix(s1, s2, insert=1, delete=1, substitute=None, transpose=None, local=False, maximize=False)[-1][-1]
 
-def dist_damerau_levenshtein(a, b) -> int:
+def dist_osa(a, b) -> int:
     s1, s2 = to_list(a), to_list(b)
     return _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=1, local=False, maximize=False)[-1][-1]
 
@@ -645,7 +491,7 @@ def _fill_dp_matrix(a, b, **kwargs):
 def matrix_levenshtein(a, b):
     return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=1, transpose=None, local=False, maximize=False)
 
-def matrix_damerau_levenshtein(a, b):
+def matrix_osa(a, b):
     return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=1, transpose=1, local=False, maximize=False)
 
 def matrix_indel(a, b):
@@ -736,102 +582,8 @@ def dist_bray_curtis(a, b) -> float:
     
     return diff_sum / total_sum if total_sum != 0 else 0.0
 
-# ------------------------------------------------------------------
-# Because yes, why not?
-# ------------------------------------------------------------------
-
-def dif_hedgehog(a, b):
-    a = list_numeric(a)
-    b = list_numeric(b)
-    d = 0.0
-    for i, x in enumerate(a):
-        for j, y in enumerate(b):
-            xi = -x if i % 2 == 1 else x
-            yj = -y if j % 2 == 1 else y
-            d += abs(xi - yj)
-
-    return d / (1.0 + d)
-
-def sim_hedgehog(a, b):
-    return 1 - dif_hedgehog(a, b)
-
-def dist_hedgehog(a, b):
-    return 0.0 # Hedgehogs always go together perfectly
-
-# ------------------------------------------------------------------
-# Metric Registry
-# ------------------------------------------------------------------
-
-def definition(metric):
-    metric = metric.lower().replace('-', '_')
-    with open(_DEFINITIONS_FILE, 'r', encoding='utf-8') as f:
-        content = f.read()
-    chunks = content.split('\n##')
-    for chunk in chunks:
-        lines = chunk.splitlines()
-        header = lines[0].strip().lower().replace('-', '_')
-        if header == metric:
-            body = '\n'.join(lines[1:]).strip()
-            if body.startswith('@'):
-                return definition(body[1:].strip())
-            return body
-    raise ValueError(f"No definition found for '{metric}'")
 
 METRICS = {
-    'sokal_sneath': {
-        'default': 'sim',
-        'sim': sim_sokal_sneath,
-        'dif': dif_sokal_sneath,
-    },
-    'sokal_sneath1': {
-        'default': 'sim',
-        'sim': sim_sokal_sneath1,
-        'dif': dif_sokal_sneath1,
-    },
-    'sokal_sneath3': {
-        'default': 'sim',
-        'sim': sim_sokal_sneath3,
-    },
-    'smc': {
-        'default': 'sim',
-        'sim': sim_smc,
-        'dif': dif_smc,
-    },
-
-    'cosine': {
-        'default': 'sim',
-        'sim': sim_cosine,
-        'dif': dif_cosine,
-        'dist': dist_cosine,
-    },
-    'pearson': {
-        'default': 'sim',
-        'sim': sim_pearson,
-    },
-    'spearman': {
-        'default': 'sim',
-        'sim': sim_spearman,
-    },
-    'kendall_tau': {
-        'default': 'sim',
-        'sim': sim_kendall_tau,
-    },
-    'kendall_tau_a': {
-        'default': 'sim',
-        'sim': sim_kendall_tau,
-    },
-    'tau_a': {
-        'default': 'sim',
-        'sim': sim_kendall_tau,
-    },
-    'kendall_tau_b': {
-        'default': 'sim',
-        'sim': sim_kendall_tau_b,
-    },
-    'tau_b': {
-        'default': 'sim',
-        'sim': sim_kendall_tau_b,
-    },
     'hamming': {
         'default': 'dist',
         'dist': dist_hamming,
@@ -910,9 +662,9 @@ METRICS = {
         'sim': sim_monge_elkan,
     },
 
-    'damerau_levenshtein': {
+    'osa': {
         'default': 'dist',
-        'dist': dist_damerau_levenshtein,
+        'dist': dist_osa,
      },
 
     'lee': {
@@ -943,13 +695,6 @@ METRICS = {
         'default': 'dist',
         'dist': dist_bray_curtis,
     },
-    
-    'hedgehog': {
-        'default': 'dist',
-        'dist': dist_hedgehog,
-        'dif': dif_hedgehog,
-        'sim': sim_hedgehog,
-    }
 }
 
 

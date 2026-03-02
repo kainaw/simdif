@@ -57,6 +57,7 @@ dif_iou = dif_jaccard
 
 
 METRICS['jaccard'] = {
+    'class': 'set',
     'default': 'sim',
     'sim': sim_jaccard,
     'dif': dif_jaccard,

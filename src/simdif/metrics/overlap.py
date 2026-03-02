@@ -61,6 +61,7 @@ dif_simpson = dif_overlap
 
 
 METRICS['overlap'] = {
+    'class': 'set',
     'default': 'sim',
     'sim': sim_overlap,
     'dif': dif_overlap,

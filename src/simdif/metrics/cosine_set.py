@@ -64,6 +64,7 @@ dif_ochiai = dif_cosine_set
 
 
 METRICS['cosine_set'] = {
+    'class': 'set',
     'default': 'sim',
     'sim': sim_cosine_set,
     'dif': dif_cosine_set,

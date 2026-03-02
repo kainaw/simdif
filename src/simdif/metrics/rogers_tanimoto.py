@@ -55,6 +55,7 @@ dif_sokal_michener_ii = dif_rogers_tanimoto
 dif_sokal_sneath_ii = dif_rogers_tanimoto
 
 METRICS['rogers_tanimoto'] = {
+    'class': 'set',
     'default': 'sim',
     'sim': sim_rogers_tanimoto,
     'dif': dif_rogers_tanimoto,

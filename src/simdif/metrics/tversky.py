@@ -68,6 +68,7 @@ def dif_tversky(a, b, alpha=0.5, beta=0.5, **_) -> float:
 
 
 METRICS['tversky'] = {
+    'class': 'set',
     'default': 'sim',
     'sim': sim_tversky,
     'dif': dif_tversky,
