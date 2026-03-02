@@ -1,6 +1,6 @@
 import math
 import sys
-from ..simdif import Metric, METRICS, to_list_numeric
+from ..simdif import Metric, METRICS, to_list_numeric, _align_vectors
 
 
 def info_minkowski() -> str:
@@ -22,16 +22,19 @@ Common values for p:
 
 def explain_minkowski(a, b, **kwargs) -> str:
     p = kwargs.get('p', 2)
-    v1, v2 = to_list_numeric(a), to_list_numeric(b)
-    if len(v1) != len(v2):
+    a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
+    if len(a) != len(b):
+        a, b = _align_vectors(a, b, **kwargs)
+        a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
+    if len(a) != len(b):
         return "Error: Vector length mismatch"
-    terms = [f"|{x} - {y}|^{p}" for x, y in zip(v1, v2)]
-    values = [abs(x - y)**p for x, y in zip(v1, v2)]
+    terms = [f"|{x} - {y}|^{p}" for x, y in zip(a, b)]
+    values = [abs(x - y)**p for x, y in zip(a, b)]
     sum_powers = sum(values)
     result = sum_powers ** (1/p)
     return f"""
-A: {v1}
-B: {v2}
+A: {a}
+B: {b}
 Parameter p: {p}
 
 Step 1: Calculate sum of absolute differences to the power of p:
@@ -50,7 +53,10 @@ Minkowski Distance: {result:.4f}
 @Metric
 def dist_minkowski(a, b, **kwargs) -> float:
     p = kwargs.get('p', 2)
-    a, b = to_list_numeric(a), to_list_numeric(b)
+    a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
+    if len(a) != len(b):
+        a, b = _align_vectors(a, b, **kwargs)
+        a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
     if len(a) != len(b):
         raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
     if 'scipy' in sys.modules:

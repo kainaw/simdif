@@ -220,13 +220,34 @@ def to_set(val):
     except TypeError:
         return {_make_hashable(x) for x in lst}
 
-def to_list_numeric(val, allow_complex=False) -> list:
-    lst = to_list(val)
-    check = numbers.Number if allow_complex else numbers.Real
-    if not all(isinstance(x, check) for x in lst):
-        raise TypeError(f"Expected numeric values, got {[type(x).__name__ for x in lst if not isinstance(x, check)]}")
-    return lst
 
+def to_list_numeric(val, **kwargs) -> list:
+    allow_complex = kwargs.get("allow_complex", False)
+    ascii_mode = kwargs.get("ascii", False)
+    raw_list = to_list(val)
+    numeric_vector = []
+    target_type = numbers.Number if allow_complex else numbers.Real
+    for item in raw_list:
+        try:
+            num = float(item)
+            numeric_vector.append(num)
+            continue
+        except (ValueError, TypeError):
+            if allow_complex:
+                try:
+                    num = complex(item)
+                    numeric_vector.append(num)
+                    continue
+                except (ValueError, TypeError):
+                    pass
+        text_rep = str(item)
+        if ascii_mode:
+            numeric_vector.extend([float(ord(c)) for c in text_rep])
+        else:
+            numeric_vector.append(0.0)            
+    return numeric_vector
+    
+    
 def to_binary(val, width=None) -> list:
     if not isinstance(val, int):
         raise TypeError(f"to_binary expects an int, got {type(val).__name__}")
@@ -275,6 +296,16 @@ def _aleph_counts(a, b, n_universe=0):
     return n00, n01, n10, n11
 
 
+def _align_vectors(a, b, **kwargs):
+    pad_value = kwargs.get("pad_value", None)
+    if pad_value is not None and len(a) != len(b):
+        max_len = max(len(a), len(b))
+        a_aligned = list(a) + [pad_value] * (max_len - len(a))
+        b_aligned = list(b) + [pad_value] * (max_len - len(b))
+        return a_aligned, b_aligned
+    return a, b
+
+
 # ------------------------------------------------------------------
 # Vector Metrics
 # ------------------------------------------------------------------
@@ -300,13 +331,6 @@ def dif_tanimoto(a, b, binary=False) -> float:
 # ------------------------------------------------------------------
 # Distance metrics
 # ------------------------------------------------------------------
-
-def dist_chebyshev(a, b) -> float:
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b): raise ValueError("Length mismatch")
-    return max(abs(x - y) for x, y in zip(a, b))
-dist_chessboard = dist_chebyshev
-dist_linf = dist_chebyshev
 
 def dist_kl_divergence(a, b) -> float:
     a = _to_distribution(a, "a")
@@ -357,7 +381,7 @@ def _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=None, match_s
             matrix[i][j] = max(0, cell) if local else cell
     return matrix
 
-def dist_levenshtein(a, b) -> int:
+def dist_levenshtein(a, b, **kwargs) -> int:
     if isinstance(a, str) and isinstance(b, str) and 'Levenshtein' in sys.modules:
         return float(sys.modules['Levenshtein'].distance(a, b))
     s1, s2 = to_list(a), to_list(b)
@@ -560,11 +584,6 @@ METRICS = {
         'default': 'sim',
         'sim': sim_tanimoto,
         'dif': dif_tanimoto,
-    },
-
-    'chebyshev': {
-        'default': 'dist',
-        'dist': dist_chebyshev,
     },
 
     'kl_divergence': {

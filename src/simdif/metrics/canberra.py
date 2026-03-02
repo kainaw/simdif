@@ -26,6 +26,8 @@ Note: If both Ai and Bi are zero, the term is skipped (treated as 0).
 def explain_canberra(a, b, **_) -> str:
     a, b = to_list_numeric(a), to_list_numeric(b)
     if len(a) != len(b):
+        a, b = _align_vectors(a, b, **kwargs)
+    if len(a) != len(b):
         raise ValueError(f"Length mismatch: {len(a)} and {len(b)}")
     terms = []
     total = 0.0
