@@ -1,4 +1,4 @@
-from ..simdif import Metric, METRICS, to_list_numeric
+from ..simdif import Metric, METRICS, to_list_numeric_aligned
 
 
 def info_canberra() -> str:
@@ -23,12 +23,8 @@ Note: If both Ai and Bi are zero, the term is skipped (treated as 0).
     """.strip()
 
 
-def explain_canberra(a, b, **_) -> str:
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b):
-        a, b = _align_vectors(a, b, **kwargs)
-    if len(a) != len(b):
-        raise ValueError(f"Length mismatch: {len(a)} and {len(b)}")
+def explain_canberra(a, b, **kwargs) -> str:
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
     terms = []
     total = 0.0
     for i, (x, y) in enumerate(zip(a, b)):
@@ -49,10 +45,8 @@ Similarity (1 / (1+d)): {1 / (1 + total):.4f}
 
 
 @Metric
-def dist_canberra(a, b, **_) -> float:
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b):
-        raise ValueError(f"Length mismatch: {len(a)} and {len(b)}")
+def dist_canberra(a, b, **kwargs) -> float:
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
     score = 0.0
     for x, y in zip(a, b):
         denominator = abs(x) + abs(y)
@@ -62,8 +56,8 @@ def dist_canberra(a, b, **_) -> float:
 
 
 @Metric
-def sim_canberra(a, b, **_) -> float:
-    d = dist_canberra(a, b)
+def sim_canberra(a, b, **kwargs) -> float:
+    d = dist_canberra(a, b, **kwargs)
     return 1.0 / (1.0 + d)
 
 

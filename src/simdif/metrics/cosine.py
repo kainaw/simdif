@@ -1,4 +1,4 @@
-from ..simdif import Metric, METRICS, to_list_numeric, _align_vectors
+from ..simdif import Metric, METRICS, to_list_numeric_aligned
 import sys
 
 
@@ -25,12 +25,7 @@ to the Ochiai coefficient.
 
 
 def explain_cosine(a, b, **kwargs) -> str:
-    a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
-    if len(a) != len(b):
-        a, b = _align_vectors(a, b, **kwargs)
-        a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
     dot = sum(x * y for x, y in zip(a, b))
     norm_a = sum(x * x for x in a) ** 0.5
     norm_b = sum(y * y for y in b) ** 0.5
@@ -54,12 +49,7 @@ Distance:   {dist_cosine(a, b):.4f}
 
 @Metric
 def sim_cosine(a, b, **kwargs) -> float:
-    a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
-    if len(a) != len(b):
-        a, b = _align_vectors(a, b, **kwargs)
-        a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
     if len(a) == 0 and len(b) == 0:
         return 1.0
     if 'scipy' in sys.modules:

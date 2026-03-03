@@ -1,4 +1,4 @@
-from ..simdif import METRICS, to_list_numeric, Metric
+from ..simdif import Metric, METRICS, to_list_numeric_aligned
 
 
 def info_chebyshev() -> str:
@@ -18,14 +18,14 @@ info_chessboard = info_chebyshev
 info_linf = info_chebyshev
 
 
-def explain_chebyshev(a, b, **_) -> str:
-    v1, v2 = to_list_numeric(a), to_list_numeric(b)
-    diffs = [abs(x - y) for x, y in zip(v1, v2)]
+def explain_chebyshev(a, b, **kwargs) -> str:
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
+    diffs = [abs(x - y) for x, y in zip(a, b)]
     max_diff = max(diffs)
     idx = diffs.index(max_diff)
     return f"""
-A: {v1}
-B: {v2}
+A: {a}
+B: {b}
 Absolute Differences: {diffs}
 Maximum Difference: {max_diff:.4f} (at index {idx})
 Chebyshev Distance: {max_diff:.4f}
@@ -35,18 +35,18 @@ explain_linf = explain_chebyshev
 
 
 @Metric
-def dist_chebyshev(a, b, **_) -> float:
-    v1, v2 = to_list_numeric(a), to_list_numeric(b)
-    if len(v1) != len(v2): 
-        raise ValueError("Length mismatch")
-    return float(max(abs(x - y) for x, y in zip(v1, v2)))
+def dist_chebyshev(a, b, **kwargs) -> float:
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
+    if len(a)==0 and len(b)==0:
+        return 0.0
+    return float(max(abs(x - y) for x, y in zip(a, b)))
 dist_chessboard = dist_chebyshev
 dist_linf = dist_chebyshev
 
 
 @Metric
-def sim_chebyshev(a, b, **_) -> float:
-    return 1.0 / (1.0 + dist_chebyshev(a, b))
+def sim_chebyshev(a, b, **kwargs) -> float:
+    return 1.0 / (1.0 + dist_chebyshev(a, b, **kwargs))
 sim_chessboard = sim_chebyshev
 sim_linf = sim_chebyshev
 

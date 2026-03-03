@@ -306,6 +306,17 @@ def _align_vectors(a, b, **kwargs):
     return a, b
 
 
+def to_list_numeric_aligned(a, b, **kwargs):
+    a = to_list_numeric(a, **kwargs)
+    b = to_list_numeric(b, **kwargs)
+    if len(a) != len(b):
+        pad_value = kwargs.get('pad_value')
+        if pad_value is None:
+            raise ValueError("Vector length mismatch")
+        numeric_pad = float(pad_value)
+        a, b = _align_vectors(a, b, pad_value=numeric_pad)
+    return a, b
+
 # ------------------------------------------------------------------
 # Vector Metrics
 # ------------------------------------------------------------------
