@@ -174,7 +174,7 @@ def explain(a, b, metric, **kwargs):
 # Utilities
 # ------------------------------------------------------------------
 
-def to_list(val):
+def to_list(val, **kwargs):
     if val is None:
         return []
     if isinstance(val, list):
@@ -303,6 +303,17 @@ def _align_vectors(a, b, **kwargs):
         a_aligned = list(a) + [pad_value] * (max_len - len(a))
         b_aligned = list(b) + [pad_value] * (max_len - len(b))
         return a_aligned, b_aligned
+    return a, b
+
+
+def to_list_aligned(a, b, **kwargs):
+    a = to_list(a, **kwargs)
+    b = to_list(b, **kwargs)
+    if len(a) != len(b):
+        pad_value = kwargs.get('pad_value')
+        if pad_value is None:
+            raise ValueError("Vector length mismatch")
+        a, b = _align_vectors(a, b, pad_value=pad_value)
     return a, b
 
 

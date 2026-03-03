@@ -30,16 +30,11 @@ def _dl_matrix(s1, s2) -> list:
                 last_col = j
             else:
                 cost = 1
-            matrix[i + 1][j + 1] = min(
-                matrix[i][j] + cost,           # substitute (or match)
-                matrix[i + 1][j] + 1,          # insert
-                matrix[i][j + 1] + 1,          # delete
-                matrix[i1][j1]                 # transpose
-                    + (i - i1 - 1)             # deletions before transposition
-                    + 1                        # the transposition itself
-                    + (j - j1 - 1)             # insertions after transposition
-            )
-
+            substitution = matrix[i][j] + cost
+            insertion = matrix[i + 1][j] + 1
+            deletion = matrix[i][j + 1] + 1
+            transposition = matrix[i1][j1] + (i - i1 - 1) + 1 + (j - j1 - 1)
+            matrix[i + 1][j + 1] = min(substitution, insertion, deletion, transposition)
         last_row[s1[i - 1]] = i
 
     return matrix

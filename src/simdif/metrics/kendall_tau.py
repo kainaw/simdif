@@ -1,4 +1,4 @@
-from ..simdif import Metric, METRICS, to_list_numeric
+from ..simdif import Metric, METRICS, to_list_numeric_aligned
 import sys
 
 
@@ -28,10 +28,8 @@ info_kendall_tau_a = info_kendall_tau
 info_tau_a = info_kendall_tau
 
 
-def explain_kendall_tau(a, b, **_) -> str:
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
+def explain_kendall_tau(a, b, **kwargs) -> str:
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
     if len(a) < 2:
         raise ValueError(f"Kendall's Tau requires at least 2 elements, got {len(a)}")
     n = len(a)
@@ -49,7 +47,7 @@ def explain_kendall_tau(a, b, **_) -> str:
             else:
                 ties += 1
     total = n * (n - 1) // 2
-    sim = sim_kendall_tau(a, b)
+    sim = sim_kendall_tau(a, b, **kwargs)
     return f"""
 A: ({", ".join(map(str, a))})
 B: ({", ".join(map(str, b))})
@@ -63,17 +61,15 @@ Calculation:
 = ({concordant} - {discordant}) / {total}
 = {concordant - discordant} / {total}
 = {sim:.4f}
-Distance: 1 - τ_a = {dist_kendall_tau(a, b):.4f}
+Distance: 1 - τ_a = {dist_kendall_tau(a, b, **kwargs):.4f}
     """.strip()
 explain_kendall_tau_a = explain_kendall_tau
 explain_tau_a = explain_kendall_tau
 
 
 @Metric
-def sim_kendall_tau(a, b, **_) -> float:
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b):
-        raise ValueError(f"Sequences must be the same length, got {len(a)} and {len(b)}")
+def sim_kendall_tau(a, b, **kwargs) -> float:
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
     if len(a) < 2:
         raise ValueError(f"Kendall's Tau requires at least 2 elements, got {len(a)}")
     n = len(a)
@@ -95,8 +91,8 @@ sim_tau_a = sim_kendall_tau
 
 
 @Metric
-def dist_kendall_tau(a, b, **_) -> float:
-    return 1 - sim_kendall_tau(a, b)
+def dist_kendall_tau(a, b, **kwargs) -> float:
+    return 1 - sim_kendall_tau(a, b, **kwargs)
 dist_kendall_tau_a = dist_kendall_tau
 dist_tau_a = dist_kendall_tau
 

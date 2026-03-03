@@ -1,4 +1,4 @@
-from ..simdif import Metric, METRICS, to_list, to_binary
+from ..simdif import Metric, METRICS, to_list_aligned, to_binary
 
 
 def info_hamming() -> str:
@@ -15,16 +15,15 @@ Range: [0, ∞)
     """.strip()
 
 
-def explain_hamming(a, b, binary=False, **_) -> str:
+def explain_hamming(a, b, **kwargs) -> str:
+    binary = kwargs.get('binary', False)
     if binary:
         if not isinstance(a, int) or not isinstance(b, int):
             raise TypeError("binary=True requires integer inputs")
         width = max(a.bit_length(), b.bit_length())
         a, b = to_binary(a, width), to_binary(b, width)
     else:
-        a, b = to_list(a), to_list(b)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
+        a, b = to_list_aligned(a, b, **kwargs)
     a_str = [str(x) for x in a]
     b_str = [str(x) for x in b]
     mismatches = ["1" if x != y else "0" for x, y in zip(a, b)]
@@ -48,31 +47,30 @@ def explain_hamming(a, b, binary=False, **_) -> str:
 
 
 @Metric
-def dist_hamming(a, b, binary=False, **_) -> float:
+def dist_hamming(a, b, **kwargs) -> float:
+    binary = kwargs.get('binary', False)
     if binary:
         if not isinstance(a, int) or not isinstance(b, int):
             raise TypeError("binary=True requires integer inputs")
         width = max(a.bit_length(), b.bit_length())
         a, b = to_binary(a, width), to_binary(b, width)
     else:
-        a, b = to_list(a), to_list(b)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
+        a, b = to_list_aligned(a, b, **kwargs)
     return sum(x != y for x, y in zip(a, b))
 
 
 @Metric
-def dif_hamming(a, b, binary=False, **_) -> float:
+def dif_hamming(a, b, **kwargs) -> float:
     if binary:
         n = len(to_binary(a))
     else:
         n = len(to_list(a))
-    return dist_hamming(a, b, binary) / n
+    return dist_hamming(a, b, **kwargs) / n
 
 
 @Metric
-def sim_hamming(a, b, binary=False, **_) -> float:
-    return 1 - dif_hamming(a, b, binary)
+def sim_hamming(a, b, **kwargs) -> float:
+    return 1 - dif_hamming(a, b, **kwargs)
 
 
 METRICS['hamming'] = {

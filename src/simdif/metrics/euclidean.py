@@ -1,6 +1,6 @@
 import math
 from .minkowski import dist_minkowski
-from ..simdif import Metric, METRICS
+from ..simdif import Metric, METRICS, to_list_numeric_aligned
 
 
 def info_euclidean() -> str:
@@ -15,21 +15,21 @@ Formula:
     """.strip()
 
 
-def explain_euclidean(a, b, **_) -> str:
-    v1, v2 = to_list_numeric(a), to_list_numeric(b)
-    if len(v1) != len(v2):
+def explain_euclidean(a, b, **kwargs) -> str:
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
+    if len(a) != len(b):
         raise ValueException("Error: Vector length mismatch")
     steps = []
     sum_sq = 0.0
-    for i, (x, y) in enumerate(zip(v1, v2)):
+    for i, (x, y) in enumerate(zip(a, b)):
         diff = x - y
         diff_sq = diff ** 2
         sum_sq += diff_sq
         steps.append(f"  idx {i}: ({x} - {y})^2 = {diff}^2 = {diff_sq:.4f}")
     dist = math.sqrt(sum_sq)
     return f"""
-A: {v1}
-B: {v2}
+A: {a}
+B: {b}
 Step-by-step Squared Differences:
 {chr(10).join(steps)}
 Sum of Squares: {sum_sq:.4f}
@@ -39,13 +39,14 @@ Similarity (1 / (1 + d)): {1.0 / (1.0 + dist):.4f}
 
 
 @Metric
-def dist_euclidean(a, b, **_) -> float:
-    return dist_minkowski(a, b, p=2)
+def dist_euclidean(a, b, **kwargs) -> float:
+    kwargs.pop('p', None)
+    return dist_minkowski(a, b, p=2, **kwargs)
 
 
 @Metric
-def sim_euclidean(a, b, **_) -> float:
-    return 1.0 / (1.0 + dist_euclidean(a, b))
+def sim_euclidean(a, b, **kwargs) -> float:
+    return 1.0 / (1.0 + dist_euclidean(a, b, **kwargs))
 
 
 METRICS['euclidean'] = {

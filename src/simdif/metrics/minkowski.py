@@ -1,6 +1,6 @@
 import math
 import sys
-from ..simdif import Metric, METRICS, to_list_numeric, _align_vectors
+from ..simdif import Metric, METRICS, to_list_numeric_aligned
 
 
 def info_minkowski() -> str:
@@ -22,12 +22,7 @@ Common values for p:
 
 def explain_minkowski(a, b, **kwargs) -> str:
     p = kwargs.get('p', 2)
-    a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
-    if len(a) != len(b):
-        a, b = _align_vectors(a, b, **kwargs)
-        a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
-    if len(a) != len(b):
-        return "Error: Vector length mismatch"
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
     terms = [f"|{x} - {y}|^{p}" for x, y in zip(a, b)]
     values = [abs(x - y)**p for x, y in zip(a, b)]
     sum_powers = sum(values)
@@ -53,12 +48,7 @@ Minkowski Distance: {result:.4f}
 @Metric
 def dist_minkowski(a, b, **kwargs) -> float:
     p = kwargs.get('p', 2)
-    a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
-    if len(a) != len(b):
-        a, b = _align_vectors(a, b, **kwargs)
-        a, b = to_list_numeric(a, **kwargs), to_list_numeric(b, **kwargs)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
     if 'scipy' in sys.modules:
         from scipy.spatial import distance
         return float(distance.minkowski(a, b, p))

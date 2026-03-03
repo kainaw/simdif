@@ -1,4 +1,4 @@
-from ..simdif import Metric, METRICS, to_list_numeric
+from ..simdif import Metric, METRICS, to_list_numeric_aligned
 import sys
 
 
@@ -28,10 +28,8 @@ counted independently. If scipy is available, scipy.stats.kendalltau is used.
 info_tau_b = info_kendall_tau_b
 
 
-def explain_kendall_tau_b(a, b, **_) -> str:
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
+def explain_kendall_tau_b(a, b, **kwargs) -> str:
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
     if len(a) < 2:
         raise ValueError(f"Kendall's Tau-b requires at least 2 elements, got {len(a)}")
     n = len(a)
@@ -76,10 +74,8 @@ explain_tau_b = explain_kendall_tau_b
 
 
 @Metric
-def sim_kendall_tau_b(a, b, **_) -> float:
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if len(a) != len(b):
-        raise ValueError(f"Sequences must be the same length, got {len(a)} and {len(b)}")
+def sim_kendall_tau_b(a, b, **kwargs) -> float:
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
     if len(a) < 2:
         raise ValueError(f"Kendall's Tau-b requires at least 2 elements, got {len(a)}")
     if 'scipy' in sys.modules:
@@ -87,21 +83,27 @@ def sim_kendall_tau_b(a, b, **_) -> float:
     n = len(a)
     concordant = 0
     discordant = 0
-    ties_a = 0
-    ties_b = 0
+    n0 = n * (n - 1) / 2
+    n1 = 0  # Ties in A
+    n2 = 0  # Ties in B
+    
     for i in range(n):
         for j in range(i + 1, n):
             a_dir = a[i] - a[j]
             b_dir = b[i] - b[j]
-            if a_dir * b_dir > 0:
-                concordant += 1
-            elif a_dir * b_dir < 0:
-                discordant += 1
+            
+            if a_dir != 0 and b_dir != 0:
+                if a_dir * b_dir > 0:
+                    concordant += 1
+                else:
+                    discordant += 1
+            
             if a_dir == 0:
-                ties_a += 1
+                n1 += 1
             if b_dir == 0:
-                ties_b += 1
-    denom = ((concordant + discordant + ties_a) * (concordant + discordant + ties_b)) ** 0.5
+                n2 += 1
+
+    denom = ((n0 - n1) * (n0 - n2)) ** 0.5
     if denom == 0:
         return 1.0
     return (concordant - discordant) / denom
@@ -109,8 +111,8 @@ sim_tau_b = sim_kendall_tau_b
 
 
 @Metric
-def dist_kendall_tau_b(a, b, **_) -> float:
-    return 1 - sim_kendall_tau_b(a, b)
+def dist_kendall_tau_b(a, b, **kwargs) -> float:
+    return 1 - sim_kendall_tau_b(a, b, **kwargs)
 dist_tau_b = dist_kendall_tau_b
 
 
