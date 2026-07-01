@@ -208,7 +208,7 @@ def _make_hashable(x):
     if isinstance(x, dict):
         return tuple(sorted((k, _make_hashable(v)) for k, v in x.items()))
     return x
-    
+
 def to_set(val):
     if val is None:
         return set()
@@ -244,10 +244,10 @@ def to_list_numeric(val, **kwargs) -> list:
         if ascii_mode:
             numeric_vector.extend([float(ord(c)) for c in text_rep])
         else:
-            numeric_vector.append(0.0)            
+            numeric_vector.append(0.0)
     return numeric_vector
-    
-    
+
+
 def to_binary(val, width=None) -> list:
     if not isinstance(val, int):
         raise TypeError(f"to_binary expects an int, got {type(val).__name__}")
@@ -265,8 +265,10 @@ def to_tokens(val):
 
 def to_distribution(val):
     lst = to_list_numeric(val)
-    if any(x < 0 for x in lst):
-        raise ValueError("Distribution contains negative values")
+    min_val = min(lst)
+    if min_val < 0: # Make all values positive
+        ep = 1e-12 # Tiny shift to avoid zero
+        lst = [(x - min_val) + ep for x in lst]
     total = sum(lst)
     if total == 0:
         raise ValueError("Distribution sums to zero")
@@ -556,7 +558,7 @@ def sim_jaro(a, b) -> float:
     match_window = max(len1, len2) // 2 - 1
     s1_matches = [False] * len1
     s2_matches = [False] * len2
-    
+
     matches = 0
     for i in range(len1):
         start = max(0, i - match_window)
@@ -566,7 +568,7 @@ def sim_jaro(a, b) -> float:
                 s1_matches[i] = s2_matches[j] = True
                 matches += 1
                 break
-    
+
     if matches == 0: return 0.0
 
     # Count transpositions
@@ -577,7 +579,7 @@ def sim_jaro(a, b) -> float:
             while not s2_matches[k]: k += 1
             if s1[i] != s2[k]: transpositions += 1
             k += 1
-            
+
     return (matches/len1 + matches/len2 + (matches - transpositions/2)/matches) / 3
 
 def dif_jaro(a, b) -> float:
@@ -647,7 +649,7 @@ METRICS = {
         'trace': trace_smith_waterman,
         'matrix': matrix_smith_waterman,
     },
-    
+
     'monge_elkan': {
         'default': 'sim',
         'sim': sim_monge_elkan,
