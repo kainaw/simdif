@@ -331,51 +331,6 @@ def to_list_numeric_aligned(a, b, **kwargs):
     return a, b
 
 # ------------------------------------------------------------------
-# Vector Metrics
-# ------------------------------------------------------------------
-
-def sim_tanimoto(a, b, binary=False) -> float:
-    if binary:
-        if not isinstance(a, int) or not isinstance(b, int):
-            raise TypeError("binary=True requires integer inputs")
-        width = max(a.bit_length(), b.bit_length())
-        a, b = to_binary(a, width), to_binary(b, width)
-    else:
-        a, b = to_list(a), to_list(b)
-    if len(a) != len(b):
-        raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
-    if len(a) == 0:
-        return 1.0
-    intersection = sum(x == y == 1 for x, y in zip(a, b))
-    return intersection / (sum(a) + sum(b) - intersection)
-
-def dif_tanimoto(a, b, binary=False) -> float:
-    return 1 - sim_tanimoto(a, b, binary)
-
-# ------------------------------------------------------------------
-# Distance metrics
-# ------------------------------------------------------------------
-
-def dist_kl_divergence(a, b) -> float:
-    a = _to_distribution(a, "a")
-    b = _to_distribution(b, "b")
-    if len(a) != len(b):
-        raise ValueError(f"Distributions must have the same length, got {len(a)} and {len(b)}")
-    return sum(p * math.log(p / q) for p, q in zip(a, b) if p > 0)
-dist_kullback_leibler=dist_kl_divergence
-
-def dist_js_divergence(a, b) -> float:
-    a = _to_distribution(a, "a")
-    b = _to_distribution(b, "b")
-    if len(a) != len(b):
-        raise ValueError(f"Distributions must have the same length, got {len(a)} and {len(b)}")
-    m = [(x + y) / 2 for x, y in zip(a, b)]
-    kl_a = sum(p * math.log(p / q) for p, q in zip(a, m) if p > 0)
-    kl_b = sum(p * math.log(p / q) for p, q in zip(b, m) if p > 0)
-    return (kl_a + kl_b) / 2
-dist_jensen_shannon = dist_js_divergence
-
-# ------------------------------------------------------------------
 # Edit Distance Metrics
 # ------------------------------------------------------------------
 
@@ -392,67 +347,19 @@ def _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=None, match_s
                 matrix[i-1][j] + delete,
                 matrix[i][j-1] + insert,
             ]
-            if substitute is not None:
-                diag = matrix[i-1][j-1]
-                if s1[i-1] == s2[j-1]:
-                    options.append(diag if match_score is None else diag + match_score)
-                else:
-                    options.append(diag + substitute)
+            diag = matrix[i-1][j-1]
+            if s1[i-1] == s2[j-1]:
+                # A match is always available (free, or scored by match_score),
+                # independent of whether substitution is enabled.
+                options.append(diag if match_score is None else diag + match_score)
+            elif substitute is not None:
+                options.append(diag + substitute)
             if transpose is not None and i > 1 and j > 1:
                 if s1[i-1] == s2[j-2] and s1[i-2] == s2[j-1]:
                     options.append(matrix[i-2][j-2] + transpose)
             cell = max(options) if maximize else min(options)
             matrix[i][j] = max(0, cell) if local else cell
     return matrix
-
-def dist_levenshtein(a, b, **kwargs) -> int:
-    if isinstance(a, str) and isinstance(b, str) and 'Levenshtein' in sys.modules:
-        return float(sys.modules['Levenshtein'].distance(a, b))
-    s1, s2 = to_list(a), to_list(b)
-    return _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=None, local=False, maximize=False)[-1][-1]
-
-def dist_indel(a, b) -> int:
-    s1, s2 = to_list(a), to_list(b)
-    return _dp_matrix(s1, s2, insert=1, delete=1, substitute=None, transpose=None, local=False, maximize=False)[-1][-1]
-
-def dist_osa(a, b) -> int:
-    s1, s2 = to_list(a), to_list(b)
-    return _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=1, local=False, maximize=False)[-1][-1]
-
-def score_needleman_wunsch(a, b, match_score=1, mismatch_penalty=-1, gap_penalty=-1) -> int:
-    s1, s2 = to_list(a), to_list(b)
-    return _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=False, maximize=True)[-1][-1]
-
-score_needleman = score_needleman_wunsch
-score_wunsch = score_needleman_wunsch
-
-def score_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-1) -> int:
-    s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=True, maximize=True)
-    return max(matrix[i][j] for i in range(len(s1)+1) for j in range(len(s2)+1))
-
-score_smith = score_smith_waterman
-score_waterman = score_smith_waterman
-
-def sim_levenshtein(a, b) -> float:
-    s1, s2 = to_list(a), to_list(b)
-    max_len = max(len(s1), len(s2))
-    if max_len == 0: return 1.0
-    return 1 - (dist_levenshtein(s1, s2) / max_len)
-
-def dif_levenshtein(a, b) -> float:
-    return 1 - sim_levenshtein(a, b)
-
-def sim_monge_elkan(a, b, method="jaro_winkler") -> float:
-    tokens_a = to_tokens(a)
-    tokens_b = to_tokens(b)
-    if not tokens_a or not tokens_b:
-        return 0.0
-    total_score = 0.0
-    for s in tokens_a:
-        best_match = max(sim(s, t, method) for t in tokens_b)
-        total_score += best_match
-    return total_score / len(tokens_a)
 
 def _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local=False, gap_symbol="-"):
     rows, cols = len(s1), len(s2)
@@ -489,26 +396,6 @@ def _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local
             curr_j -= 1
     return align1[::-1], align2[::-1]
 
-def trace_needleman_wunsch(a, b, match_score=1, mismatch_penalty=-1, gap_penalty=-1, gap_symbol="-"):
-    s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=False, maximize=True)
-    return _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local=False, gap_symbol=gap_symbol)
-
-def trace_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-1, gap_symbol="-"):
-    s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=True, maximize=True)
-    return _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local=True, gap_symbol=gap_symbol)
-
-def dist_lee(a, b, q=None):
-    a, b = to_list_numeric(a), to_list_numeric(b)
-    if q is None:
-        q = max(max(a), max(b)) + 1
-    distance = 0
-    for va, vb in zip(a, b):
-        diff = abs(va - vb)
-        distance += min(diff, q - diff)
-    return distance
-
 def _fill_dp_matrix(a, b, **kwargs):
     s1, s2 = to_list(a), to_list(b)
     matrix = _dp_matrix(s1, s2, **kwargs)
@@ -519,171 +406,13 @@ def _fill_dp_matrix(a, b, **kwargs):
     matrix.insert(0, header_row)
     return matrix
 
-def matrix_levenshtein(a, b):
-    return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=1, transpose=None, local=False, maximize=False)
-
-def matrix_osa(a, b):
-    return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=1, transpose=1, local=False, maximize=False)
-
-def matrix_indel(a, b):
-    return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=None, transpose=None, local=False, maximize=False)
-
-def matrix_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-1):
-    return _fill_dp_matrix(a, b, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=True, maximize=True)
-
-def matrix_needleman_wunsch(a, b, match_score=1, mismatch_penalty=-1, gap_penalty=-1):
-    return _fill_dp_matrix(a, b, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=False, maximize=True)
-
-def matrix_lcs(a, b):
-    return _fill_dp_matrix(a, b, insert=0, delete=0, substitute=None, match_score=1, local=False, maximize=True)
 # ------------------------------------------------------------------
-# Sequence metrics
+# Metric registry
 # ------------------------------------------------------------------
+# Populated by the modules in simdif/metrics/, each of which registers its
+# own entry (and any aliases) into this dict at import time.
 
-def score_lcs(a, b) -> int:
-    s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, 1, 0, 0, local=False, maximize=True)
-    return matrix[-1][-1]
-
-def dist_lcs(a, b) -> int:
-    s1, s2 = to_list(a), to_list(b)
-    return len(s1) + len(s2) - 2 * score_lcs(s1, s2)
-
-def sim_jaro(a, b) -> float:
-    s1, s2 = to_list(a), to_list(b)
-    len1, len2 = len(s1), len(s2)
-    if len1 == 0 and len2 == 0: return 1.0
-    if len1 == 0 or len2 == 0: return 0.0
-
-    match_window = max(len1, len2) // 2 - 1
-    s1_matches = [False] * len1
-    s2_matches = [False] * len2
-
-    matches = 0
-    for i in range(len1):
-        start = max(0, i - match_window)
-        end = min(i + match_window + 1, len2)
-        for j in range(start, end):
-            if not s2_matches[j] and s1[i] == s2[j]:
-                s1_matches[i] = s2_matches[j] = True
-                matches += 1
-                break
-
-    if matches == 0: return 0.0
-
-    # Count transpositions
-    k = 0
-    transpositions = 0
-    for i in range(len1):
-        if s1_matches[i]:
-            while not s2_matches[k]: k += 1
-            if s1[i] != s2[k]: transpositions += 1
-            k += 1
-
-    return (matches/len1 + matches/len2 + (matches - transpositions/2)/matches) / 3
-
-def dif_jaro(a, b) -> float:
-    return 1.0 - sim_jaro(a, b)
-
-def sim_jaro_winkler(a, b, p=0.1, max_l=4) -> float:
-    if p > 0.25:
-        raise ValueError("p should not exceed 0.25 to keep score within [0, 1]")
-    s1, s2 = to_list(a), to_list(b)
-    j = sim_jaro(s1, s2)
-    l = 0
-    for char1, char2 in zip(s1[:max_l], s2[:max_l]):
-        if char1 == char2: l += 1
-        else: break
-    return j + (l * p * (1 - j))
-
-def dif_jaro_winkler(a, b, p=0.1, max_l=4) -> float:
-    return 1 - sim_jaro_winkler(a, b, p, max_l)
-
-# ------------------------------------------------------------------
-# Frequency/Abundance Metrics (for Dicts or Counters)
-# ------------------------------------------------------------------
-
-METRICS = {
-    'tanimoto': {
-        'default': 'sim',
-        'sim': sim_tanimoto,
-        'dif': dif_tanimoto,
-    },
-
-    'kl_divergence': {
-        'default':'dist',
-        'dist': dist_kl_divergence,
-    },
-    'kullback_leibler': {
-        'default':'dist',
-        'dist': dist_kl_divergence,
-    },
-
-    'js_divergence': {
-        'default':'dist',
-        'dist': dist_js_divergence,
-    },
-    'jensen_shannon': {
-        'default':'dist',
-        'dist': dist_js_divergence,
-    },
-
-    'levenshtein': {
-        'default': 'dist',
-        'dist': dist_levenshtein,
-        'sim': sim_levenshtein,
-        'dif': dif_levenshtein,
-        'matrix': matrix_levenshtein,
-    },
-
-    'needleman_wunsch': {
-        'default': 'score',
-        'score': score_needleman_wunsch,
-        'trace': trace_needleman_wunsch,
-        'matrix': matrix_needleman_wunsch,
-    },
-
-    'smith_waterman': {
-        'default': 'score',
-        'score': score_smith_waterman,
-        'trace': trace_smith_waterman,
-        'matrix': matrix_smith_waterman,
-    },
-
-    'monge_elkan': {
-        'default': 'sim',
-        'sim': sim_monge_elkan,
-    },
-
-    'osa': {
-        'default': 'dist',
-        'dist': dist_osa,
-     },
-
-    'lee': {
-        'default': 'dist',
-        'dist': dist_lee,
-    },
-
-    'lcs': {
-        'default': 'score',
-        'score': score_lcs,
-        'dist': dist_lcs,
-        'matrix': matrix_lcs,
-    },
-
-    'jaro': {
-        'default': 'sim',
-        'sim': sim_jaro,
-        'dif': dif_jaro,
-    },
-
-    'jaro_winkler': {
-        'default': 'sim',
-        'sim': sim_jaro_winkler,
-        'dif': dif_jaro_winkler,
-    },
-}
+METRICS = {}
 
 
 # Similarity is the shadow two things cast in the same light. 🦔

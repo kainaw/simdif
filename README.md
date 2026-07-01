@@ -109,12 +109,46 @@ simdif organises metrics into three classes based on what kind of input they ope
 | **Sequence** | Ordered elements; position matters | strings, lists, tuples |
 | **Vector** | Numeric arrays; magnitude and direction matter | lists of numbers, NumPy arrays, SciPy sparse, TensorFlow tensors |
 
-### String / ASCII helpers
+### Input helpers
 
-When comparing strings as sets or vectors, use `ascii=True` with a `pad_value` to control how characters are encoded and how unequal-length inputs are handled:
+**simdif** is designed to be "input-agnostic." It features a deterministic casting engine that transparently translates complex data structures into the primitive types required by each metric. Whether your data lives in a standard library collection or a specialized scientific framework, simdif ensures a consistent interface.
 
-```python
-simdif("cat", "cart", ['jaccard', 'cosine'], ascii=True, pad_value='0')
+If a single word is provided, such as "hedgehog", it will be converted to a list of characters: ['h','e','d','g','e','h','o','g'].
+If a word is provided as part of a list, such as ["hedge","hog"], each value will remain a string.
+
+Many metrics require numeric input. If the optional parameter `ascii` is set to True, characters will be converted to ASCII values for the characters.
+For example "HELLO" becomes [72, 69, 76, 76, 79].
+
+Many metrics require the lists to be the same length. If the optional parameter `pad_value` is given a value, that will be used to pad a short list so it is the same length as a long list.
+For example, if A=[1, 2, 3] and B=[4, 5]. If `pad_value` is 0, B will become [4, 5, 0].
+
+If the optional parameter `binary` is set to True and an integer value is provided by itself, not in a list, the integer will be converted to binary.
+For example, 42 becomes [1, 0, 1, 0, 1, 0].
+
+Input helpers are useful for comparing multiple metrics with conflicting input requirements in one function call:
+
+```
+a = 'hedge'
+b = 'hog'
+print(simdif.simdif(
+    a, b,
+    ['jaccard','dice','levenshtein','soundex', 'cosine','hamming'],
+    pad_value="0", ascii=True
+))
+
+```
+
+The two strings are turned into lists. Where appropriate, the ASCII characters are turned into integers. Where needed, the shorter list is padded with zero.
+
+```
+{
+    'jaccard': 0.4,
+    'dice': 0.5714285714285714,
+    'levenshtein': 3,
+    'soundex': 0.0,
+    'cosine': 0.7729941672513129,
+    'hamming': 4
+}
 ```
 
 ---
@@ -148,7 +182,6 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
 | `damerau_levenshtein` | `dl` | dist |
-| `hamming` | — | dist |
 | `jaro` | — | sim |
 | `jaro_winkler` | — | sim |
 | `kendall_tau` | `kendall_tau_a`, `tau_a` | sim |
@@ -164,7 +197,9 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 
 ### Vector Metrics
 
-These metrics operate on numeric arrays. Inputs must be numeric and equal in length (or padded).
+These metrics require input to be ordered and same length.
+
+Most vector metrics require numeric input for mathematical operations.
 
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
@@ -173,12 +208,17 @@ These metrics operate on numeric arrays. Inputs must be numeric and equal in len
 | `chebyshev` | `chessboard`, `linf` | dist |
 | `cosine` | — | sim |
 | `euclidean` | — | dist |
-| `hedgehog` | — | sim |
 | `index_of_dissimilarity` | `hoover`, `duncan` | dif |
 | `mahalanobis` | — | dist |
 | `manhattan` | `taxicab`, `cityblock` | dist |
 | `minkowski` | — | dist |
 | `pearson` | — | sim |
+
+If mathematical operations are not required, any data type is allowed.
+
+| Canonical Name | Aliases | Default Output |
+|---|---|---|
+| `hamming` | — | dist |
 
 ### Probabilistic / Divergence Metrics
 
