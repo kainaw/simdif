@@ -22,7 +22,12 @@
 ## Installation
 
 ```bash
-# Clone and install in editable mode (development)
+pip install simdif
+```
+
+For development (editable install from a clone):
+
+```bash
 git clone https://github.com/kainaw/simdif.git
 cd simdif
 pip install -e .
