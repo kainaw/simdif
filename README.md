@@ -2,7 +2,7 @@
 
 **simdif** is a pure-Python library for computing, comparing, and understanding similarity, difference, and distance metrics. It started as a collection of similarity and difference metrics, and has grown to include distance metrics and alignment scores (Smith-Waterman, Needleman-Wunsch). The design goal is **education first**: every metric ships with a step-by-step explanation function and a plain-English definition function so you can see exactly how a score is derived.
 
-> ⚠️ **Not intended for large-scale or production workloads.** simdif is pure Python and prioritises clarity over speed. It is well-suited for classroom use, small experiments, and learning how metrics work — not for processing large datasets or performance-critical pipelines.
+> ⚠️ **Not intended for large-scale or production workloads.** simdif is pure Python and prioritises clarity over speed. It is well-suited for classroom use, small experiments, and learning how metrics work - not for processing large datasets or performance-critical pipelines.
 
 ---
 
@@ -12,10 +12,10 @@
 - **Three input classes**: sets, sequences, and vectors
 - **Broad input support**: plain Python lists, strings, sets, numeric lists, and NumPy / SciPy / TensorFlow arrays/tensors
 - **Compare metrics side-by-side** by passing a list of metric names to `simdif()`
-- **`explain_<metric>()`** — walks through the calculation step by step and returns the score
-- **`info_<metric>()`** — returns a plain-English definition of the metric
+- **`explain_<metric>()`** - walks through the calculation step by step and returns the score
+- **`info_<metric>()`** - returns a plain-English definition of the metric
 - **Alias-friendly**: most metrics have multiple accepted names (e.g. `'dice'`, `'sorensen'`, `'dice_sorensen'`, `'sorensen_dice'` all work)
-- **Optional fast paths**: if a faster library (e.g. `python-Levenshtein`) is installed, simdif will lazy-import and use it automatically — no configuration needed
+- **Optional fast paths**: if a faster library (e.g. `python-Levenshtein`) is installed, simdif will lazy-import and use it automatically - no configuration needed
 
 ---
 
@@ -163,17 +163,24 @@ These metrics treat inputs as unordered collections. Element frequency is ignore
 
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
+| `braun_blanquet` | - | sim |
 | `cosine_set` | `ochiai` | sim |
 | `dice_sorensen` | `dice`, `sorensen`, `sorensen_dice` | sim |
 | `jaccard` | `iou` | sim |
 | `kulczynski` | `kulczynski_ii` | sim |
+| `kulczynski_i` | - | sim |
+| `mcconnaughey` | - | sim |
 | `overlap` | `szymkiewicz_simpson`, `simpson` | sim |
+| `phi` | `mcc`, `matthews` | sim |
 | `rogers_tanimoto` | `sokal_ii`, `sokal_michener_ii`, `sokal_sneath_ii` | sim |
 | `russel_rao` | `russell_rao`, `rr` | sim |
 | `smc` | `sokal_michener` | sim |
 | `sokal_sneath_i` | `ssi` | sim |
 | `sokal_sneath_iii` | `ssiii` | sim |
-| `tversky` | — | sim |
+| `tversky` | - | sim |
+| `yule_q` | - | sim |
+
+> **Universe-aware metrics.** `smc`, `rogers_tanimoto`, `phi`, and `yule_q` use "shared absences" (elements in neither set), so they take an optional `n_universe` parameter giving the size of the total element space. Without it, shared absences count as 0, which makes the association measures (`phi`, `yule_q`) degenerate — always pass `n_universe` for those. Example: `simdif(a, b, ['phi', 'yule_q'], n_universe=26)`.
 
 ### Sequence Metrics
 
@@ -182,18 +189,19 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
 | `damerau_levenshtein` | `dl` | dist |
-| `jaro` | — | sim |
-| `jaro_winkler` | — | sim |
+| `indel` | - | dist |
+| `jaro` | - | sim |
+| `jaro_winkler` | - | sim |
 | `kendall_tau` | `kendall_tau_a`, `tau_a` | sim |
 | `kendall_tau_b` | `tau_b` | sim |
-| `levenshtein` | — | dist |
-| `lcs` | — | score |
-| `monge_elkan` | — | sim |
-| `needleman_wunsch` | — | score |
-| `osa` | — | dist |
-| `smith_waterman` | — | score |
-| `soundex` | — | sim |
-| `spearman` | — | sim |
+| `lcs` | - | score |
+| `levenshtein` | - | dist |
+| `monge_elkan` | - | sim |
+| `needleman_wunsch` | `needleman`, `wunsch` | score |
+| `osa` | - | dist |
+| `smith_waterman` | `smith`, `waterman` | score |
+| `soundex` | - | sim |
+| `spearman` | - | sim |
 
 ### Vector Metrics
 
@@ -203,22 +211,24 @@ Most vector metrics require numeric input for mathematical operations.
 
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
-| `bray_curtis` | — | dist |
-| `canberra` | — | dist |
+| `bray_curtis` | - | dist |
+| `canberra` | - | dist |
 | `chebyshev` | `chessboard`, `linf` | dist |
-| `cosine` | — | sim |
-| `euclidean` | — | dist |
+| `cosine` | - | sim |
+| `euclidean` | - | dist |
+| `geodesic` | `earth` | dist |
 | `index_of_dissimilarity` | `hoover`, `duncan` | dif |
-| `mahalanobis` | — | dist |
+| `lee` | - | dist |
+| `mahalanobis` | - | dist |
 | `manhattan` | `taxicab`, `cityblock` | dist |
-| `minkowski` | — | dist |
-| `pearson` | — | sim |
+| `minkowski` | - | dist |
+| `pearson` | - | sim |
 
 If mathematical operations are not required, any data type is allowed.
 
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
-| `hamming` | — | dist |
+| `hamming` | - | dist |
 
 ### Probabilistic / Divergence Metrics
 
@@ -226,9 +236,12 @@ These metrics measure how much two probability distributions differ.
 
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
-| `kl_divergence` | `kullback_leibler` | dist |
+| `bhattacharyya` | - | dist |
+| `hellinger` | - | dist |
 | `js_divergence` | `jensen_shannon` | dist |
-| `tanimoto` | — | sim |
+| `kl_divergence` | `kullback_leibler` | dist |
+| `tanimoto` | - | sim |
+| `wasserstein` | `earth_mover`, `emd` | dist |
 
 ---
 
@@ -238,9 +251,9 @@ Many metrics can return more than one type of output. The table below shows what
 
 | Output type | Meaning |
 |---|---|
-| `sim` | Similarity — higher is more similar (typically 0–1) |
-| `dif` | Difference — higher is more different (typically 0–1) |
-| `dist` | Distance — higher means further apart (range varies by metric) |
+| `sim` | Similarity - higher is more similar (typically 0–1) |
+| `dif` | Difference - higher is more different (typically 0–1) |
+| `dist` | Distance - higher means further apart (range varies by metric) |
 | `score` | Raw alignment score (Smith-Waterman, Needleman-Wunsch, LCS) |
 | `matrix` | Full dynamic programming matrix (Levenshtein, NW, SW, LCS) |
 | `trace` | Alignment traceback path (NW, SW) |
@@ -265,7 +278,7 @@ Every metric in simdif that has a `class` designation (`set`, `sequence`, or `ve
 
 ### `explain_<metric>(a, b, ...)`
 
-Runs the calculation and prints each step — what the inputs look like after preprocessing, what intermediate values are computed, and how the final score is assembled. Returns the score so it can be used programmatically.
+Runs the calculation and prints each step - what the inputs look like after preprocessing, what intermediate values are computed, and how the final score is assembled. Returns the score so it can be used programmatically.
 
 ### `info_<metric>()`
 
@@ -300,7 +313,7 @@ for name, score in results.items():
     print(f"{name:>20}: {score:.4f}")
 ```
 
-This is especially useful for showing students that the "right" metric depends on what you care about — membership, order, magnitude, or distribution.
+This is especially useful for showing students that the "right" metric depends on what you care about - membership, order, magnitude, or distribution.
 
 ---
 

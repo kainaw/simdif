@@ -1,5 +1,5 @@
 from .minkowski import dist_minkowski
-from ..simdif import Metric, METRICS
+from ..simdif import Metric, METRICS, to_list_numeric_aligned
 
 
 def info_manhattan() -> str:
@@ -17,10 +17,8 @@ info_taxicab = info_manhattan
 info_cityblock = info_manhattan
 
 
-def explain_manhattan(a, b, **_) -> str:
-    v1, v2 = to_list_numeric(a), to_list_numeric(b)
-    if len(v1) != len(v2):
-        return "Error: Vector length mismatch"
+def explain_manhattan(a, b, **kwargs) -> str:
+    v1, v2 = to_list_numeric_aligned(a, b, **kwargs)
     steps = []
     total_dist = 0.0
     for i, (x, y) in enumerate(zip(v1, v2)):
@@ -40,15 +38,16 @@ explain_cityblock = explain_manhattan
 
 
 @Metric
-def dist_manhattan(a, b, **_) -> float:
-    return dist_minkowski(a, b, p=1)
+def dist_manhattan(a, b, **kwargs) -> float:
+    # Force p=1 but forward the rest (e.g. pad_value) to Minkowski.
+    return dist_minkowski(a, b, **{**kwargs, 'p': 1})
 dist_taxicab = dist_manhattan
 dist_cityblock = dist_manhattan
 
 
 @Metric
-def sim_manhattan(a, b, **_) -> float:
-    return 1.0 / (1.0 + dist_manhattan(a, b))
+def sim_manhattan(a, b, **kwargs) -> float:
+    return 1.0 / (1.0 + dist_manhattan(a, b, **kwargs))
 sim_taxicab = sim_manhattan
 sim_cityblock = sim_manhattan
 

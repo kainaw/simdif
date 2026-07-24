@@ -1,4 +1,4 @@
-from ..simdif import Metric, METRICS, to_list_numeric
+from ..simdif import Metric, METRICS, to_list_numeric_aligned
 
 
 def info_lee() -> str:
@@ -20,7 +20,7 @@ q = 2 or q = 3 the Lee distance coincides with the Hamming distance.
 
 
 def explain_lee(a, b, q=None, **kwargs) -> str:
-    va, vb = to_list_numeric(a), to_list_numeric(b)
+    va, vb = to_list_numeric_aligned(a, b, **kwargs)
     qq = q if q is not None else max(max(va), max(vb)) + 1
     steps = []
     total = 0
@@ -41,7 +41,7 @@ Lee Distance (sum): {total}
 
 @Metric
 def dist_lee(a, b, q=None, **kwargs) -> float:
-    a, b = to_list_numeric(a), to_list_numeric(b)
+    a, b = to_list_numeric_aligned(a, b, **kwargs)
     if q is None:
         q = max(max(a), max(b)) + 1
     distance = 0
@@ -53,7 +53,7 @@ def dist_lee(a, b, q=None, **kwargs) -> float:
 
 @Metric
 def sim_lee(a, b, q=None, **kwargs) -> float:
-    return 1.0 / (1.0 + dist_lee(a, b, q=q))
+    return 1.0 / (1.0 + dist_lee(a, b, q=q, **kwargs))
 
 
 METRICS['lee'] = {

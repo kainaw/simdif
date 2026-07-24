@@ -294,7 +294,8 @@ def _aleph_counts(a, b, n_universe=0):
     n11 = len(a & b)
     n10 = len(a - b)
     n01 = len(b - a)
-    n00 = max(0, n_universe - len(a | b))
+    # n_universe=None means "no universe supplied" -> no shared absences (d=0).
+    n00 = max(0, (n_universe or 0) - len(a | b))
     return n00, n01, n10, n11
 
 

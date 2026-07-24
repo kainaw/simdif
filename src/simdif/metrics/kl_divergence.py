@@ -34,9 +34,13 @@ def explain_kl_divergence(a, b, **kwargs) -> str:
     total = 0.0
     for i, (p, q) in enumerate(zip(a, b)):
         if p > 0:
-            term = p * math.log(p / q)
-            total += term
-            steps.append(f"  idx {i}: {p:.4f} * log({p:.4f} / {q:.4f}) = {term:.4f}")
+            if q <= 0:
+                total = float('inf')
+                steps.append(f"  idx {i}: P={p:.4f}, Q=0 -> divergence is infinite")
+            else:
+                term = p * math.log(p / q)
+                total += term
+                steps.append(f"  idx {i}: {p:.4f} * log({p:.4f} / {q:.4f}) = {term:.4f}")
         else:
             steps.append(f"  idx {i}: P={p:.4f} -> skipped (contributes 0)")
     return f"""
@@ -56,7 +60,14 @@ def dist_kl_divergence(a, b, **kwargs) -> float:
     b = to_distribution(b)
     if len(a) != len(b):
         raise ValueError(f"Distributions must have the same length, got {len(a)} and {len(b)}")
-    return sum(p * math.log(p / q) for p, q in zip(a, b) if p > 0)
+    total = 0.0
+    for p, q in zip(a, b):
+        if p > 0:
+            if q <= 0:
+                # P has support where Q does not: divergence is infinite.
+                return float('inf')
+            total += p * math.log(p / q)
+    return total
 dist_kullback_leibler = dist_kl_divergence
 
 

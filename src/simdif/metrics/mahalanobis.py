@@ -16,16 +16,16 @@ Formula:
     d = sqrt( (x - y)^T * S^-1 * (x - y) )
     Where S is the Covariance Matrix.
 
-Note: In this implementation, if a covariance matrix is not provided via 
-the 'covariance' keyword argument, it defaults to the Identity Matrix, 
-rendering the result identical to Euclidean Distance.
+Note: In this implementation, the INVERSE covariance matrix (S^-1) is supplied
+via the 'covariance_inv' keyword argument. If it is not provided, S^-1 defaults
+to the Identity Matrix, rendering the result identical to Euclidean Distance.
     """.strip()
 
 
 def explain_mahalanobis(a, b, **kwargs) -> str:
     a, b = to_list_numeric(a), to_list_numeric(b)
     dist = dist_mahalanobis(a, b, **kwargs)
-    has_cov = "Provided" if 'covariance' in kwargs else "Identity (Default)"
+    has_cov = "Provided" if 'covariance_inv' in kwargs else "Identity (Default)"
     return f"""
 A: {a}
 B: {b}
@@ -38,13 +38,13 @@ Mahalanobis Distance: {dist:.4f}
 @Metric
 def dist_mahalanobis(a, b, **kwargs) -> float:
     """
-    Standard Mahalanobis requires the inverse of the covariance matrix (S_inv).
-    For educational simplicity in a pairwise comparison, we look for 'S_inv'
-    in kwargs. If missing, we perform Euclidean.
+    Standard Mahalanobis requires the inverse of the covariance matrix (S^-1).
+    For educational simplicity in a pairwise comparison, we look for
+    'covariance_inv' in kwargs. If missing, we perform Euclidean.
     """
     a, b = to_list_numeric(a), to_list_numeric(b)
     if len(a) != len(b):
-        raise ValueError("Vectors must be the same length.")
+        raise ValueError("Vector length mismatch")
     diff = [x - y for x, y in zip(a, b)]
     s_inv = kwargs.get('covariance_inv')
     if s_inv is None:

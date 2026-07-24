@@ -11,24 +11,40 @@ def _to_soundex_char(element) -> str | None:
     return None
     
 
+def _soundex_digit(c, mapping):
+    """Return the Soundex digit for an uppercase consonant, or None."""
+    for chars, digit in mapping.items():
+        if c in chars:
+            return digit
+    return None
+
+
 def _get_soundex(a, length=3):
     a = to_list(a)
     if len(a) == 0:
         return None, ""
     first = a[0]
     mapping = {'BFPV': '1', 'CGJKQSXZ': '2', 'DT': '3', 'L': '4', 'MN': '5', 'R': '6'}
+    # Seed last_digit with the first letter's code so a following same-coded
+    # letter is collapsed into it (standard Soundex rule).
+    fc = _to_soundex_char(first)
+    last_digit = _soundex_digit(fc, mapping) if fc is not None else ""
     digits = ""
-    last_digit = ""
     for x in a[1:]:
         c = _to_soundex_char(x)  # returns uppercase letter or None
         if c is None:
             continue
-        for chars, digit in mapping.items():
-            if c in chars:
-                if digit != last_digit:
-                    digits += digit
-                    last_digit = digit
-                break
+        if c in 'AEIOUY':
+            # Vowels separate: reset so a repeated code after a vowel is kept.
+            last_digit = ""
+            continue
+        if c in 'HW':
+            # H and W are transparent: they neither code nor reset.
+            continue
+        digit = _soundex_digit(c, mapping)
+        if digit is not None and digit != last_digit:
+            digits += digit
+        last_digit = digit if digit is not None else last_digit
         if len(digits) >= length:
             break
     return first, digits.ljust(length, '0')
