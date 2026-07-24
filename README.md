@@ -185,7 +185,7 @@ These metrics treat inputs as unordered collections. Element frequency is ignore
 | `tversky` | - | sim |
 | `yule_q` | - | sim |
 
-> **Universe-aware metrics.** `smc`, `rogers_tanimoto`, `phi`, and `yule_q` use "shared absences" (elements in neither set), so they take an optional `n_universe` parameter giving the size of the total element space. Without it, shared absences count as 0, which makes the association measures (`phi`, `yule_q`) degenerate — always pass `n_universe` for those. Example: `simdif(a, b, ['phi', 'yule_q'], n_universe=26)`.
+> **Universe-aware metrics.** `smc`, `rogers_tanimoto`, `phi`, and `yule_q` use "shared absences" (elements in neither set), so they take an optional `n_universe` parameter giving the size of the total element space. Without it, shared absences count as 0, which makes the association measures (`phi`, `yule_q`) degenerate - always pass `n_universe` for those. Example: `simdif(a, b, ['phi', 'yule_q'], n_universe=26)`.
 
 ### Sequence Metrics
 
@@ -213,9 +213,9 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | `soundex` | - | sim |
 | `spearman` | - | sim |
 
-> **BM25 takes a corpus.** `bm25` scores a query A against a document B and is the one sequence metric that needs external context: an optional `corpus` keyword (a list of documents, each a list of terms) supplies the IDF and average document length — the same pattern as `n_universe` for the set metrics. Without it, A and B are used as a degenerate 2-document corpus. Tune `k1` (term-frequency saturation) and `b_norm` (length normalization; named to avoid clashing with the document argument B). Example: `simdif(query, doc, ['bm25'], corpus=[doc1, doc2, ...])`.
+> **BM25 takes a corpus.** `bm25` scores a query A against a document B and is the one sequence metric that needs external context: an optional `corpus` keyword (a list of documents, each a list of terms) supplies the IDF and average document length - the same pattern as `n_universe` for the set metrics. Without it, A and B are used as a degenerate 2-document corpus. Tune `k1` (term-frequency saturation) and `b_norm` (length normalization; named to avoid clashing with the document argument B). Example: `simdif(query, doc, ['bm25'], corpus=[doc1, doc2, ...])`.
 
-> **Evolutionary distances** (`p_distance`, `jukes_cantor`, `kimura`) estimate how far two aligned sequences have diverged — a progression from raw observation to biological correction. `p_distance` is the observed proportion of differing sites (generic, `==` only). `jukes_cantor` corrects it for multiple substitutions under a k-state model (`k=4` for DNA by default; `k=20` for protein). `kimura` (K80) additionally splits transitions from transversions, so it needs a symbol partition via the `groups` keyword (defaults to DNA purines `{A,G}` / pyrimidines `{C,T}`, case-insensitive); sites with out-of-group symbols are skipped. Both corrected distances saturate to `inf` when sequences are too diverged to estimate, and both assume inputs are already aligned (pair them with `needleman_wunsch` / `smith_waterman`).
+> **Evolutionary distances** (`p_distance`, `jukes_cantor`, `kimura`) estimate how far two aligned sequences have diverged - a progression from raw observation to biological correction. `p_distance` is the observed proportion of differing sites (generic, `==` only). `jukes_cantor` corrects it for multiple substitutions under a k-state model (`k=4` for DNA by default; `k=20` for protein). `kimura` (K80) additionally splits transitions from transversions, so it needs a symbol partition via the `groups` keyword (defaults to DNA purines `{A,G}` / pyrimidines `{C,T}`, case-insensitive); sites with out-of-group symbols are skipped. Both corrected distances saturate to `inf` when sequences are too diverged to estimate, and both assume inputs are already aligned (pair them with `needleman_wunsch` / `smith_waterman`).
 
 ### Vector Metrics
 
@@ -259,18 +259,18 @@ These metrics measure how much two probability distributions differ.
 
 ### Two-Sample Statistics
 
-These compare two **independent numeric samples** — how far apart their central tendencies are. Unlike the vector metrics, the inputs are *not* aligned and *need not be the same length*; order is irrelevant and duplicate values are significant (they are samples, not sets). Each sample needs at least 2 values. Both return an unbounded `dist` (higher = more different) with a `sim = 1/(1+dist)` companion.
+These compare two **independent numeric samples** - how far apart their central tendencies are. Unlike the vector metrics, the inputs are *not* aligned and *need not be the same length*; order is irrelevant and duplicate values are significant (they are samples, not sets). Each sample needs at least 2 values. Both return an unbounded `dist` (higher = more different) with a `sim = 1/(1+dist)` companion.
 
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
 | `welch_t` | `welch`, `two_sample_t`, `sed` | dist |
 | `cohens_d` | `cohen_d`, `cohens` | dist |
 
-`welch_t` is the two-sample t-statistic — the mean difference divided by the standard error of the difference (`sqrt(s_A²/n_A + s_B²/n_B)`). `cohens_d` is the standardized effect size — the mean difference divided by the pooled standard deviation. (The standard error alone measures the *precision* of the difference, not its size; both metrics divide the mean difference by a spread term to measure the difference itself.)
+`welch_t` is the two-sample t-statistic - the mean difference divided by the standard error of the difference (`sqrt(s_A²/n_A + s_B²/n_B)`). `cohens_d` is the standardized effect size - the mean difference divided by the pooled standard deviation. (The standard error alone measures the *precision* of the difference, not its size; both metrics divide the mean difference by a spread term to measure the difference itself.)
 
 ### Clustering / Partition Comparison
 
-These compare **two clusterings of the same objects**, given as equal-length label sequences aligned by object index (object *i* has label `A[i]` and `B[i]`). They are **label-invariant** — relabelling the clusters does not change the score — because they count agreements over object *pairs* rather than matching labels. Each reduces the 2×2 pair-agreement table (`a` = a pair together in both, `b`/`c` = together in only one, `d` = apart in both) to a single similarity, and the three are the pair-counting form of existing coefficients (`rand_index` = `smc`, `fowlkes_mallows` = `cosine_set`, on pairs).
+These compare **two clusterings of the same objects**, given as equal-length label sequences aligned by object index (object *i* has label `A[i]` and `B[i]`). They are **label-invariant** - relabelling the clusters does not change the score - because they count agreements over object *pairs* rather than matching labels. Each reduces the 2×2 pair-agreement table (`a` = a pair together in both, `b`/`c` = together in only one, `d` = apart in both) to a single similarity, and the three are the pair-counting form of existing coefficients (`rand_index` = `smc`, `fowlkes_mallows` = `cosine_set`, on pairs).
 
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
@@ -278,7 +278,7 @@ These compare **two clusterings of the same objects**, given as equal-length lab
 | `adjusted_rand` | `ari`, `adjusted_rand_index` | sim |
 | `fowlkes_mallows` | `fm`, `fowlkes_mallows_index` | sim |
 
-`rand_index` = `(a+d)/total` (fraction of pairs agreed on). `adjusted_rand` corrects that for chance and is the one to prefer — it can go **negative** (worse than random), so its `sim` is not bounded to [0,1]. `fowlkes_mallows` = `a/sqrt((a+b)(a+c))`. `explain_` prints the full `a/b/c/d` table.
+`rand_index` = `(a+d)/total` (fraction of pairs agreed on). `adjusted_rand` corrects that for chance and is the one to prefer - it can go **negative** (worse than random), so its `sim` is not bounded to [0,1]. `fowlkes_mallows` = `a/sqrt((a+b)(a+c))`. `explain_` prints the full `a/b/c/d` table.
 
 ---
 
@@ -341,7 +341,7 @@ a = [1, 0, 1, 1, 0]
 b = [1, 1, 0, 1, 0]
 
 results = simdif(a, b, [
-    'jaccard', 'dice', 'cosine_set',          # set metrics
+    'jaccard', 'dice', 'cosine_set',           # set metrics
     'hamming', 'kendall_tau',                  # sequence metrics
     'cosine', 'euclidean', 'manhattan'         # vector metrics
 ])
