@@ -47,9 +47,13 @@ and NOT required to be the same length. Each needs at least 2 values. (Standard
 error alone measures the precision of the difference, not its size; dividing the
 mean difference by it is what makes this a difference measure.)
 
-Aliases: Welch, two-sample t
+Note on the 'sed' alias: it resolves to THIS metric, so it returns |t| (the mean
+difference in units of the standard error). The standard error of the difference
+itself, sqrt(s_A^2/n_A + s_B^2/n_B), is the denominator - shown in explain().
+
+Aliases: Welch, two-sample t, SED
     """.strip()
-info_welch = info_two_sample_t = info_welch_t
+info_welch = info_two_sample_t = info_sed = info_welch_t
 
 
 def explain_welch_t(a, b, **kwargs) -> str:
@@ -68,7 +72,7 @@ Standard error of difference: sqrt({s2a:.4f}/{na} + {s2b:.4f}/{nb}) = {sed:.4f}
 |t| = |{ma:.4f} - {mb:.4f}| / {sed:.4f} = {t:.4f}
 Similarity 1/(1+|t|): {1.0 / (1.0 + t):.4f}
     """.strip()
-explain_welch = explain_two_sample_t = explain_welch_t
+explain_welch = explain_two_sample_t = explain_sed = explain_welch_t
 
 
 @Metric
@@ -80,13 +84,13 @@ def dist_welch_t(a, b, **kwargs) -> float:
     if sed == 0:
         return 0.0 if diff == 0 else float('inf')
     return diff / sed
-dist_welch = dist_two_sample_t = dist_welch_t
+dist_welch = dist_two_sample_t = dist_sed = dist_welch_t
 
 
 @Metric
 def sim_welch_t(a, b, **kwargs) -> float:
     return 1.0 / (1.0 + dist_welch_t(a, b, **kwargs))
-sim_welch = sim_two_sample_t = sim_welch_t
+sim_welch = sim_two_sample_t = sim_sed = sim_welch_t
 
 
 METRICS['welch_t'] = {
@@ -97,7 +101,7 @@ METRICS['welch_t'] = {
     'info': info_welch_t,
     'explain': explain_welch_t,
 }
-METRICS['welch'] = METRICS['two_sample_t'] = METRICS['welch_t']
+METRICS['welch'] = METRICS['two_sample_t'] = METRICS['sed'] = METRICS['welch_t']
 
 
 # ------------------------------------------------------------------

@@ -29,6 +29,9 @@ def test_welch_t():
     assert dist([1, 2, 3, 4, 5], [3, 4, 5, 6, 7], 'welch') == pytest.approx(2.0)
     assert simdif([1, 2, 3, 4, 5], [3, 4, 5, 6, 7], ['two_sample_t']) == {
         'two_sample_t': pytest.approx(2.0)}
+    # 'sed' is an alias of welch_t, so it returns |t| (2.0), not the raw SED (1.0).
+    assert simdif([1, 2, 3, 4, 5], [3, 4, 5, 6, 7], ['sed']) == {'sed': pytest.approx(2.0)}
+    assert dist([1, 2, 3, 4, 5], [3, 4, 5, 6, 7], 'sed') == pytest.approx(2.0)
 
 
 def test_cohens_d():
