@@ -263,14 +263,17 @@ These metrics measure how much two probability distributions differ.
 
 ### Two-Sample Statistics
 
-These compare two **independent numeric samples** - how far apart their central tendencies are. Unlike the vector metrics, the inputs are *not* aligned and *need not be the same length*; order is irrelevant and duplicate values are significant (they are samples, not sets). Each sample needs at least 2 values. Both return an unbounded `dist` (higher = more different) with a `sim = 1/(1+dist)` companion.
+These compare two **independent numeric samples** - how far apart they are, whether in central tendency (`welch_t`, `cohens_d`) or across the whole distribution (`energy`). Unlike the vector metrics, the inputs are *not* aligned and *need not be the same length*; order is irrelevant and duplicate values are significant (they are samples, not sets). `welch_t` and `cohens_d` each need at least 2 values (they estimate variance); `energy` needs at least 1. All return an unbounded `dist` (higher = more different) with a `sim = 1/(1+dist)` companion.
 
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
 | `welch_t` | `welch`, `two_sample_t`, `sed` | dist |
 | `cohens_d` | `cohen_d`, `cohens` | dist |
+| `energy` | `energy_distance`, `e_distance` | dist |
 
 `welch_t` is the two-sample t-statistic - the mean difference divided by the standard error of the difference (`sqrt(s_A²/n_A + s_B²/n_B)`). `cohens_d` is the standardized effect size - the mean difference divided by the pooled standard deviation. (The standard error alone measures the *precision* of the difference, not its size; both metrics divide the mean difference by a spread term to measure the difference itself.)
+
+`energy` is the **energy distance** (Székely & Rizzo): `sqrt(2·mean‖a−b‖ − mean‖a−a'‖ − mean‖b−b'‖)`, built from average pairwise Euclidean distances between and within the samples. Unlike the two t-style statistics - which only see a shift in the mean - it detects **any** difference in the distributions (mean, variance, or shape) and is `0` only when both samples come from the same distribution. It is a close cousin of `wasserstein` (in 1-D it integrates `(F−G)²` where Wasserstein integrates `|F−G|`), and the same formula generalizes unchanged to vector-valued observations. Example: two samples with equal means but different spread score `0` on `cohens_d`/`welch_t` yet nonzero on `energy`.
 
 ### Clustering / Partition Comparison
 
