@@ -263,6 +263,18 @@ These compare two **independent numeric samples** — how far apart their centra
 
 `welch_t` is the two-sample t-statistic — the mean difference divided by the standard error of the difference (`sqrt(s_A²/n_A + s_B²/n_B)`). `cohens_d` is the standardized effect size — the mean difference divided by the pooled standard deviation. (The standard error alone measures the *precision* of the difference, not its size; both metrics divide the mean difference by a spread term to measure the difference itself.)
 
+### Clustering / Partition Comparison
+
+These compare **two clusterings of the same objects**, given as equal-length label sequences aligned by object index (object *i* has label `A[i]` and `B[i]`). They are **label-invariant** — relabelling the clusters does not change the score — because they count agreements over object *pairs* rather than matching labels. Each reduces the 2×2 pair-agreement table (`a` = a pair together in both, `b`/`c` = together in only one, `d` = apart in both) to a single similarity, and the three are the pair-counting form of existing coefficients (`rand_index` = `smc`, `fowlkes_mallows` = `cosine_set`, on pairs).
+
+| Canonical Name | Aliases | Default Output |
+|---|---|---|
+| `rand_index` | `rand` | sim |
+| `adjusted_rand` | `ari`, `adjusted_rand_index` | sim |
+| `fowlkes_mallows` | `fm`, `fowlkes_mallows_index` | sim |
+
+`rand_index` = `(a+d)/total` (fraction of pairs agreed on). `adjusted_rand` corrects that for chance and is the one to prefer — it can go **negative** (worse than random), so its `sim` is not bounded to [0,1]. `fowlkes_mallows` = `a/sqrt((a+b)(a+c))`. `explain_` prints the full `a/b/c/d` table.
+
 ---
 
 ## Output Types
