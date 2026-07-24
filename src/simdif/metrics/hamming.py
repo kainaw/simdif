@@ -61,11 +61,18 @@ def dist_hamming(a, b, **kwargs) -> float:
 
 @Metric
 def dif_hamming(a, b, **kwargs) -> float:
+    binary = kwargs.get('binary', False)
     if binary:
-        n = len(to_binary(a))
+        if not isinstance(a, int) or not isinstance(b, int):
+            raise TypeError("binary=True requires integer inputs")
+        width = max(a.bit_length(), b.bit_length())
+        av, bv = to_binary(a, width), to_binary(b, width)
     else:
-        n = len(to_list(a))
-    return dist_hamming(a, b, **kwargs) / n
+        av, bv = to_list_aligned(a, b, **kwargs)
+    n = len(av)
+    if n == 0:
+        return 0.0
+    return sum(x != y for x, y in zip(av, bv)) / n
 
 
 @Metric

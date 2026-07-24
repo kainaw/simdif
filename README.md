@@ -193,18 +193,23 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | `indel` | - | dist |
 | `jaro` | - | sim |
 | `jaro_winkler` | - | sim |
+| `jukes_cantor` | `jc`, `jc69` | dist |
 | `kendall_tau` | `kendall_tau_a`, `tau_a` | sim |
 | `kendall_tau_b` | `tau_b` | sim |
+| `kimura` | `k80`, `k2p` | dist |
 | `lcs` | - | score |
 | `levenshtein` | - | dist |
 | `monge_elkan` | - | sim |
 | `needleman_wunsch` | `needleman`, `wunsch` | score |
 | `osa` | - | dist |
+| `p_distance` | `p_dist` | dist |
 | `smith_waterman` | `smith`, `waterman` | score |
 | `soundex` | - | sim |
 | `spearman` | - | sim |
 
 > **BM25 takes a corpus.** `bm25` scores a query A against a document B and is the one sequence metric that needs external context: an optional `corpus` keyword (a list of documents, each a list of terms) supplies the IDF and average document length — the same pattern as `n_universe` for the set metrics. Without it, A and B are used as a degenerate 2-document corpus. Tune `k1` (term-frequency saturation) and `b_norm` (length normalization; named to avoid clashing with the document argument B). Example: `simdif(query, doc, ['bm25'], corpus=[doc1, doc2, ...])`.
+
+> **Evolutionary distances** (`p_distance`, `jukes_cantor`, `kimura`) estimate how far two aligned sequences have diverged — a progression from raw observation to biological correction. `p_distance` is the observed proportion of differing sites (generic, `==` only). `jukes_cantor` corrects it for multiple substitutions under a k-state model (`k=4` for DNA by default; `k=20` for protein). `kimura` (K80) additionally splits transitions from transversions, so it needs a symbol partition via the `groups` keyword (defaults to DNA purines `{A,G}` / pyrimidines `{C,T}`, case-insensitive); sites with out-of-group symbols are skipped. Both corrected distances saturate to `inf` when sequences are too diverged to estimate, and both assume inputs are already aligned (pair them with `needleman_wunsch` / `smith_waterman`).
 
 ### Vector Metrics
 
