@@ -252,6 +252,17 @@ These metrics measure how much two probability distributions differ.
 | `tanimoto` | - | sim |
 | `wasserstein` | `earth_mover`, `emd` | dist |
 
+### Two-Sample Statistics
+
+These compare two **independent numeric samples** — how far apart their central tendencies are. Unlike the vector metrics, the inputs are *not* aligned and *need not be the same length*; order is irrelevant and duplicate values are significant (they are samples, not sets). Each sample needs at least 2 values. Both return an unbounded `dist` (higher = more different) with a `sim = 1/(1+dist)` companion.
+
+| Canonical Name | Aliases | Default Output |
+|---|---|---|
+| `welch_t` | `welch`, `two_sample_t` | dist |
+| `cohens_d` | `cohen_d`, `cohens` | dist |
+
+`welch_t` is the two-sample t-statistic — the mean difference divided by the standard error of the difference (`sqrt(s_A²/n_A + s_B²/n_B)`). `cohens_d` is the standardized effect size — the mean difference divided by the pooled standard deviation. (The standard error alone measures the *precision* of the difference, not its size; both metrics divide the mean difference by a spread term to measure the difference itself.)
+
 ---
 
 ## Output Types
