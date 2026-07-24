@@ -168,6 +168,7 @@ These metrics treat inputs as unordered collections. Element frequency is ignore
 
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
+| `baroni_urbani_buser` | `bub`, `baroni_urbani` | sim |
 | `braun_blanquet` | - | sim |
 | `cosine_set` | `ochiai` | sim |
 | `dice_sorensen` | `dice`, `sorensen`, `sorensen_dice` | sim |
@@ -175,6 +176,7 @@ These metrics treat inputs as unordered collections. Element frequency is ignore
 | `kulczynski` | `kulczynski_ii` | sim |
 | `kulczynski_i` | - | sim |
 | `mcconnaughey` | - | sim |
+| `mountford` | - | sim |
 | `overlap` | `szymkiewicz_simpson`, `simpson` | sim |
 | `phi` | `mcc`, `matthews` | sim |
 | `rogers_tanimoto` | `sokal_ii`, `sokal_michener_ii`, `sokal_sneath_ii` | sim |
@@ -185,7 +187,9 @@ These metrics treat inputs as unordered collections. Element frequency is ignore
 | `tversky` | - | sim |
 | `yule_q` | - | sim |
 
-> **Universe-aware metrics.** `smc`, `rogers_tanimoto`, `phi`, and `yule_q` use "shared absences" (elements in neither set), so they take an optional `n_universe` parameter giving the size of the total element space. Without it, shared absences count as 0, which makes the association measures (`phi`, `yule_q`) degenerate - always pass `n_universe` for those. Example: `simdif(a, b, ['phi', 'yule_q'], n_universe=26)`.
+> **Universe-aware metrics.** `smc`, `rogers_tanimoto`, `phi`, `yule_q`, and `baroni_urbani_buser` use "shared absences" (elements in neither set), so they take an optional `n_universe` parameter giving the size of the total element space. Without it, shared absences count as 0, which makes the association measures (`phi`, `yule_q`) degenerate - always pass `n_universe` for those. `baroni_urbani_buser` reduces to Jaccard when `n_universe` is omitted, and credits shared absences through the geometric mean `sqrt(n11 * n00)` - the only set coefficient here that uses that term. Example: `simdif(a, b, ['phi', 'yule_q'], n_universe=26)`.
+
+> **Mountford is unbounded and sample-size independent.** `mountford` is an ecological presence/absence index built to stay roughly constant as sampling effort changes - unlike `jaccard`/`dice_sorensen`, which shrink when more of the fauna goes unobserved. It ignores shared absences (no `n_universe`) and its `sim` is a raw value in `[0, inf)`: `0` for disjoint species lists, `+inf` for identical ones. The bounded companion is `dif = 1 / (1 + M)` (`1` = disjoint, `0` = identical). This implementation uses Mountford's standard closed-form approximation, not the transcendental exact form. Example: `simdif(site_a, site_b, ['mountford'], output='dif')`.
 
 ### Sequence Metrics
 
