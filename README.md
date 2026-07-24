@@ -264,7 +264,7 @@ Many metrics can return more than one type of output. The table below shows what
 | `dist` | Distance - higher means further apart (range varies by metric) |
 | `score` | Raw alignment score (Smith-Waterman, Needleman-Wunsch, LCS) |
 | `matrix` | Full dynamic programming matrix (Levenshtein, NW, SW, LCS) |
-| `trace` | Alignment traceback path (NW, SW) |
+| `trace` | Recovered structure from the DP matrix: the alignment path (NW, SW) or the longest common subsequence itself (LCS) |
 
 To request a specific output type:
 

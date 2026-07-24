@@ -13,6 +13,9 @@ LCS of "ABCBDAB" and "BDCABA" is "BCBA" (length 4).
 Roles:
     score - length of the longest common subsequence (larger = more similar)
     dist  - |A| + |B| - 2 * LCS(A, B)  (the indel distance)
+    trace - the actual subsequence itself (a str for string inputs, else a
+            list). When several subsequences tie for longest, one canonical
+            path is returned.
 
 Range (score): [0, min(|A|, |B|)]
 
@@ -31,6 +34,7 @@ B: ({", ".join(f"'{y}'" for y in to_list(b))})
 LCS Matrix (rows = A, cols = B):
 {chr(10).join(rows_display)}
 LCS Length (score): {score_lcs(a, b, **kwargs)}
+Longest Common Subsequence (trace): {trace_lcs(a, b, **kwargs)!r}
 Indel Distance (dist): {dist_lcs(a, b, **kwargs)}
     """.strip()
 
@@ -53,12 +57,37 @@ def matrix_lcs(a, b, **kwargs):
     return _fill_dp_matrix(a, b, insert=0, delete=0, substitute=None, match_score=1, local=False, maximize=True)
 
 
+def trace_lcs(a, b, **kwargs):
+    """The actual longest common subsequence, recovered by backtracking the DP
+    matrix. Returns a str when both inputs are strings, else a list of elements.
+    When several subsequences tie for longest, one canonical path is returned
+    (preferring a match, then the higher-scoring neighbour)."""
+    s1, s2 = to_list(a), to_list(b)
+    matrix = _dp_matrix(s1, s2, insert=0, delete=0, substitute=None, match_score=1, local=False, maximize=True)
+    i, j = len(s1), len(s2)
+    subseq = []
+    while i > 0 and j > 0:
+        if s1[i-1] == s2[j-1]:
+            subseq.append(s1[i-1])
+            i -= 1
+            j -= 1
+        elif matrix[i-1][j] >= matrix[i][j-1]:
+            i -= 1
+        else:
+            j -= 1
+    subseq.reverse()
+    if isinstance(a, str) and isinstance(b, str):
+        return "".join(str(x) for x in subseq)
+    return subseq
+
+
 METRICS['lcs'] = {
     'class': 'sequence',
     'default': 'score',
     'score': score_lcs,
     'dist': dist_lcs,
     'matrix': matrix_lcs,
+    'trace': trace_lcs,
     'info': info_lcs,
     'explain': explain_lcs,
 }
