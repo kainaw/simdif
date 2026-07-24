@@ -203,6 +203,7 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | `needleman_wunsch` | `needleman`, `wunsch` | score |
 | `osa` | - | dist |
 | `p_distance` | `p_dist` | dist |
+| `ratcliff_obershelp` | `gestalt`, `ro`, `ratcliff`, `obershelp` | sim |
 | `smith_waterman` | `smith`, `waterman` | score |
 | `soundex` | - | sim |
 | `spearman` | - | sim |
