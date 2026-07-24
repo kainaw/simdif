@@ -22,3 +22,13 @@ def test_tanimoto():
     assert sim([1, 1, 0], [1, 0, 1], 'tanimoto') == pytest.approx(1 / 3)
     assert dif([1, 1, 0], [1, 0, 1], 'tanimoto') == pytest.approx(1 - 1 / 3)
     assert simdif([1, 1, 0], [1, 0, 1], ['tanimoto']) == {'tanimoto': pytest.approx(1 / 3)}
+    # Discoverability aliases resolve to the same binary metric.
+    for alias in ('binary_tanimoto', 'tanimoto_binary'):
+        assert sim([1, 1, 0], [1, 0, 1], alias) == pytest.approx(1 / 3)
+        assert simdif([1, 1, 0], [1, 0, 1], [alias]) == {alias: pytest.approx(1 / 3)}
+    # Binary Tanimoto == Jaccard of the sets of "on" positions.
+    # [1,1,0] has on-positions {0,1}; [1,0,1] has {0,2}; Jaccard = 1/3 = Tanimoto.
+    # (Note: jaccard of the RAW lists compares value-sets {0,1} vs {0,1} = 1.0,
+    #  so the equivalence is at the on-bit-set level, not the raw-list level.)
+    assert sim([1, 1, 0], [1, 0, 1], 'tanimoto') == pytest.approx(
+        sim({0, 1}, {0, 2}, 'jaccard'))

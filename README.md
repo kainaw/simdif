@@ -241,6 +241,10 @@ Most vector metrics require numeric input for mathematical operations.
 | `manhattan` | `taxicab`, `cityblock` | dist |
 | `minkowski` | - | dist |
 | `pearson` | - | sim |
+| `tanimoto` | `binary_tanimoto`, `tanimoto_binary` | sim |
+| `tanimoto_continuous` | `continuous_tanimoto`, `extended_tanimoto` | sim |
+
+> **Tanimoto: binary vs continuous.** `tanimoto` is the binary/bit-vector coefficient `c / (a + b - c)` on aligned 0/1 vectors (or integer bitmasks with `binary=True`) - algebraically the *same* coefficient as `jaccard`, `c/(a+b-c) = |A∩B|/|A∪B|`, just computed positionally on bit vectors rather than on sets of element values. (So `jaccard` of the raw lists is not the same call - it compares value-sets - but the two coincide on the sets of "on" positions.) `tanimoto_continuous` is the real-valued generalization `A·B / (‖A‖² + ‖B‖² − A·B)` for count or weighted vectors, and it reduces exactly to the binary form on 0/1 input. Unlike `cosine`, Tanimoto is not scale-invariant.
 
 If mathematical operations are not required, any data type is allowed.
 
@@ -258,7 +262,6 @@ These metrics measure how much two probability distributions differ.
 | `hellinger` | - | dist |
 | `js_divergence` | `jensen_shannon` | dist |
 | `kl_divergence` | `kullback_leibler` | dist |
-| `tanimoto` | - | sim |
 | `wasserstein` | `earth_mover`, `emd` | dist |
 
 ### Two-Sample Statistics

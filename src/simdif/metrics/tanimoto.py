@@ -18,7 +18,15 @@ Formula:
 
 Range: [0, 1]
     1 = identical bit patterns (two empty vectors are defined as 1.0)
+
+Note: this is algebraically IDENTICAL to the Jaccard index - c/(a+b-c) equals
+|A n B| / |A u B|. It is the same coefficient computed on 0/1 vectors (or
+integer bitmasks) instead of sets. For count or weighted vectors, use
+tanimoto_continuous, which generalizes this and reduces back to it on 0/1 input.
+
+Aliases: binary_tanimoto, tanimoto_binary
     """.strip()
+info_binary_tanimoto = info_tanimoto_binary = info_tanimoto
 
 
 def explain_tanimoto(a, b, binary=False, **kwargs) -> str:
@@ -36,6 +44,7 @@ Shared 1-bits (c): {intersection}
 Sum A (a): {sum(va)}   Sum B (b): {sum(vb)}
 Tanimoto: c / (a + b - c) = {intersection} / {denom} = {sim_tanimoto(a, b, binary):.4f}
     """.strip()
+explain_binary_tanimoto = explain_tanimoto_binary = explain_tanimoto
 
 
 @Metric
@@ -53,11 +62,13 @@ def sim_tanimoto(a, b, binary=False) -> float:
         return 1.0
     intersection = sum(x == y == 1 for x, y in zip(a, b))
     return intersection / (sum(a) + sum(b) - intersection)
+sim_binary_tanimoto = sim_tanimoto_binary = sim_tanimoto
 
 
 @Metric
 def dif_tanimoto(a, b, binary=False) -> float:
     return 1 - sim_tanimoto(a, b, binary)
+dif_binary_tanimoto = dif_tanimoto_binary = dif_tanimoto
 
 
 METRICS['tanimoto'] = {
@@ -68,3 +79,4 @@ METRICS['tanimoto'] = {
     'info': info_tanimoto,
     'explain': explain_tanimoto,
 }
+METRICS['binary_tanimoto'] = METRICS['tanimoto_binary'] = METRICS['tanimoto']
