@@ -188,6 +188,7 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
+| `bm25` | `okapi`, `okapi_bm25` | score |
 | `damerau_levenshtein` | `dl` | dist |
 | `indel` | - | dist |
 | `jaro` | - | sim |
@@ -202,6 +203,8 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | `smith_waterman` | `smith`, `waterman` | score |
 | `soundex` | - | sim |
 | `spearman` | - | sim |
+
+> **BM25 takes a corpus.** `bm25` scores a query A against a document B and is the one sequence metric that needs external context: an optional `corpus` keyword (a list of documents, each a list of terms) supplies the IDF and average document length — the same pattern as `n_universe` for the set metrics. Without it, A and B are used as a degenerate 2-document corpus. Tune `k1` (term-frequency saturation) and `b_norm` (length normalization; named to avoid clashing with the document argument B). Example: `simdif(query, doc, ['bm25'], corpus=[doc1, doc2, ...])`.
 
 ### Vector Metrics
 
