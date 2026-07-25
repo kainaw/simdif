@@ -12,12 +12,22 @@ LCS of "ABCBDAB" and "BDCABA" is "BCBA" (length 4).
 
 Roles:
     score - length of the longest common subsequence (larger = more similar)
-    dist  - |A| + |B| - 2 * LCS(A, B)  (the indel distance)
+    dist  - |A| + |B| - 2 * LCS(A, B)  (the indel distance: the number of
+            single-character insertions/deletions needed to turn A into B,
+            using no substitutions)
+    sim   - 1 - dist / (|A| + |B|), i.e. 2*LCS(A,B) / (|A|+|B|). Ranges
+            [0, 1]; 1.0 iff A and B are identical, 0.0 iff they share no
+            common subsequence at all. Note this is tied to the `dist` role
+            above (indel distance), not to score's own [0, min(|A|,|B|)]
+            range -- a short string fully contained in a much longer one
+            still scores well below 1.0 here, same as sim_levenshtein.
+    dif   - 1 - sim
     trace - the actual subsequence itself (a str for string inputs, else a
             list). When several subsequences tie for longest, one canonical
             path is returned.
 
 Range (score): [0, min(|A|, |B|)]
+Range (sim/dif): [0, 1]
 
 Note: If the optional `rapidfuzz` package is installed, its `LCSseq` similarity
 is used on strings for speed; otherwise a dynamic-programming matrix is filled
@@ -36,6 +46,8 @@ LCS Matrix (rows = A, cols = B):
 LCS Length (score): {score_lcs(a, b, **kwargs)}
 Longest Common Subsequence (trace): {trace_lcs(a, b, **kwargs)!r}
 Indel Distance (dist): {dist_lcs(a, b, **kwargs)}
+Similarity (sim): {sim_lcs(a, b, **kwargs):.4f}
+Difference (dif): {dif_lcs(a, b, **kwargs):.4f}
     """.strip()
 
 
@@ -51,6 +63,20 @@ def score_lcs(a, b, **kwargs) -> int:
 def dist_lcs(a, b, **kwargs) -> int:
     s1, s2 = to_list(a), to_list(b)
     return len(s1) + len(s2) - 2 * score_lcs(s1, s2, **kwargs)
+
+
+@Metric
+def sim_lcs(a, b, **kwargs) -> float:
+    s1, s2 = to_list(a), to_list(b)
+    total = len(s1) + len(s2)
+    if total == 0:
+        return 1.0
+    return 1 - (dist_lcs(s1, s2, **kwargs) / total)
+
+
+@Metric
+def dif_lcs(a, b, **kwargs) -> float:
+    return 1 - sim_lcs(a, b, **kwargs)
 
 
 def matrix_lcs(a, b, **kwargs):
@@ -86,6 +112,8 @@ METRICS['lcs'] = {
     'default': 'score',
     'score': score_lcs,
     'dist': dist_lcs,
+    'sim': sim_lcs,
+    'dif': dif_lcs,
     'matrix': matrix_lcs,
     'trace': trace_lcs,
     'info': info_lcs,

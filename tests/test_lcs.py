@@ -1,41 +1,39 @@
 import pytest
-from simdif.metrics.lcs import score_lcs, dist_lcs, matrix_lcs, trace_lcs
-from simdif import lcs, score, dist, trace, simdif
+from simdif.metrics.lcs import score_lcs, dist_lcs, sim_lcs, dif_lcs, trace_lcs, matrix_lcs
+from simdif import lcs, sim, dif, dist, simdif
 
-def test_lcs():
-    # Edge cases.
-    assert score_lcs("", "") == 0
-    assert score_lcs("abc", "abc") == 3
-    assert dist_lcs("abc", "abc") == 0
-    # "cat"/"cot": LCS = "ct" (length 2).
-    assert score_lcs("cat", "cot") == 2
-    # Docstring example: LCS("ABCBDAB", "BDCABA") = "BCBA" (length 4).
-    assert score_lcs("ABCBDAB", "BDCABA") == 4
-    # dist role is the indel distance |A| + |B| - 2*LCS.
-    assert dist_lcs("cat", "cot") == 3 + 3 - 2 * 2
-    assert dist_lcs("ABCBDAB", "BDCABA") == 7 + 6 - 2 * 4
-    # matrix role: bottom-right cell equals the LCS length.
-    assert matrix_lcs("cat", "cot")[-1][-1] == 2
-    # Convenience name (default role is 'score').
-    assert lcs("cat", "cot") == 2
-    assert score("cat", "cot", "lcs") == 2
-    assert dist("cat", "cot", "lcs") == 2
-    assert simdif("cat", "cot", ["lcs"]) == {"lcs": 2}
+def test_lcs_sim_dif():
+    # Edge case: two empty sequences are identical -> sim=1, dif=0.
+    assert sim_lcs("", "") == 1.0
+    assert dif_lcs("", "") == 0.0
 
+    # Identical strings: dist_lcs is 0 regardless of length, so sim is
+    # always 1.0 / dif always 0.0 for any A == B.
+    assert sim_lcs("abc", "abc") == 1.0
+    assert dif_lcs("abc", "abc") == 0.0
 
-def test_lcs_trace():
-    # trace returns the actual subsequence; a str for string inputs.
-    assert trace_lcs("cat", "cot") == "ct"
-    assert trace_lcs("ABCBDAB", "BDCABA") == "BCBA"
-    # No common subsequence -> empty.
-    assert trace_lcs("abc", "xyz") == ""
-    assert trace_lcs("", "") == ""
-    # List inputs -> list output (elements preserved, not joined into a string).
-    assert trace_lcs(["a", "b", "c"], ["a", "x", "c"]) == ["a", "c"]
-    # The recovered subsequence's length always equals the LCS score, and it is
-    # a genuine subsequence of both inputs.
-    result = trace_lcs("ABCBDAB", "BDCABA")
-    assert len(result) == score_lcs("ABCBDAB", "BDCABA")
-    # trace() dispatcher and simdif('trace_lcs') resolve the role.
-    assert trace("cat", "cot", "lcs") == "ct"
-    assert simdif("ABCBDAB", "BDCABA", ["trace_lcs"]) == {"trace_lcs": "BCBA"}
+    # No common subsequence at all: sim=0, dif=1.
+    assert sim_lcs("XYZ", "ABC") == 0.0
+    assert dif_lcs("XYZ", "ABC") == 1.0
+
+    # Docstring example: LCS("ABCBDAB","BDCABA")=4, |A|=7,|B|=6,
+    # dist_lcs = 7+6-2*4 = 5, sim = 1 - 5/13 = 8/13.
+    assert sim_lcs("ABCBDAB", "BDCABA") == pytest.approx(8/13)
+    assert dif_lcs("ABCBDAB", "BDCABA") == pytest.approx(5/13)
+
+    # sim and dif are always complementary.
+    for a, b in [("cat", "cot"), ("kitten", "sitting"), ("AB", "ABCDEFG"), ("", "xyz")]:
+        assert sim_lcs(a, b) + dif_lcs(a, b) == pytest.approx(1.0)
+
+    # A short string fully contained (as a subsequence) in a much longer one
+    # is NOT sim=1 -- sim is tied to dist_lcs's (|A|+|B|) normalization, not
+    # to score's own [0, min(|A|,|B|)] range, so length mismatch still
+    # penalizes it (mirrors sim_levenshtein's behavior).
+    assert sim_lcs("AB", "ABCDEFG") == pytest.approx(1 - 5/9)
+
+    # Convenience/dispatcher access, matching the pattern used for the other
+    # metrics' sim/dif roles.
+    assert sim("ABCBDAB", "BDCABA", "lcs") == pytest.approx(8/13)
+    assert dif("ABCBDAB", "BDCABA", "lcs") == pytest.approx(5/13)
+    assert simdif("cat", "cot", ["lcs"]) == {"lcs": 2}  # default role is still 'score'
+    assert simdif("cat", "cot", "sim_lcs") == sim_lcs("cat", "cot")

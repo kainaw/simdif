@@ -197,6 +197,7 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 
 | Canonical Name | Aliases | Default Output |
 |---|---|---|
+| `affine_gap` | `gotoh` | score |
 | `bm25` | `okapi`, `okapi_bm25` | score |
 | `damerau_levenshtein` | `dl` | dist |
 | `indel` | - | dist |
