@@ -41,7 +41,7 @@ def dist_levenshtein(a, b, **kwargs) -> int:
     if isinstance(a, str) and isinstance(b, str) and 'Levenshtein' in sys.modules:
         return float(sys.modules['Levenshtein'].distance(a, b))
     s1, s2 = to_list(a), to_list(b)
-    return _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=None, local=False, maximize=False)[-1][-1]
+    return _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=None, boundary=(1, 1), combine="min")[-1][-1]
 
 
 @Metric
@@ -59,7 +59,7 @@ def dif_levenshtein(a, b, **kwargs) -> float:
 
 
 def matrix_levenshtein(a, b, **kwargs):
-    return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=1, transpose=None, local=False, maximize=False)
+    return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=1, transpose=None, boundary=(1, 1), combine="min")
 
 
 METRICS['levenshtein'] = {

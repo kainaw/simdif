@@ -49,7 +49,7 @@ explain_waterman = explain_smith_waterman
 @Metric
 def score_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-1) -> int:
     s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=True, maximize=True)
+    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, boundary=(0, 0), floor=0, combine="max")
     return max(matrix[i][j] for i in range(len(s1)+1) for j in range(len(s2)+1))
 score_smith = score_smith_waterman
 score_waterman = score_smith_waterman
@@ -57,14 +57,14 @@ score_waterman = score_smith_waterman
 
 def trace_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-1, gap_symbol="-"):
     s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=True, maximize=True)
+    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, boundary=(0, 0), floor=0, combine="max")
     return _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local=True, gap_symbol=gap_symbol)
 trace_smith = trace_smith_waterman
 trace_waterman = trace_smith_waterman
 
 
 def matrix_smith_waterman(a, b, match_score=2, mismatch_penalty=-1, gap_penalty=-1):
-    return _fill_dp_matrix(a, b, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=True, maximize=True)
+    return _fill_dp_matrix(a, b, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, boundary=(0, 0), floor=0, combine="max")
 matrix_smith = matrix_smith_waterman
 matrix_waterman = matrix_smith_waterman
 

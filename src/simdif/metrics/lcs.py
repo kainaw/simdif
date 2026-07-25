@@ -56,7 +56,7 @@ def score_lcs(a, b, **kwargs) -> int:
     if isinstance(a, str) and isinstance(b, str) and 'rapidfuzz' in sys.modules:
         return int(sys.modules['rapidfuzz'].distance.LCSseq.similarity(a, b))
     s1, s2 = to_list(a), to_list(b)
-    return _dp_matrix(s1, s2, insert=0, delete=0, substitute=None, match_score=1, local=False, maximize=True)[-1][-1]
+    return _dp_matrix(s1, s2, insert=0, delete=0, substitute=None, match_score=1, boundary=(0, 0), combine="max")[-1][-1]
 
 
 @Metric
@@ -80,7 +80,7 @@ def dif_lcs(a, b, **kwargs) -> float:
 
 
 def matrix_lcs(a, b, **kwargs):
-    return _fill_dp_matrix(a, b, insert=0, delete=0, substitute=None, match_score=1, local=False, maximize=True)
+    return _fill_dp_matrix(a, b, insert=0, delete=0, substitute=None, match_score=1, boundary=(0, 0), combine="max")
 
 
 def trace_lcs(a, b, **kwargs):
@@ -89,7 +89,7 @@ def trace_lcs(a, b, **kwargs):
     When several subsequences tie for longest, one canonical path is returned
     (preferring a match, then the higher-scoring neighbour)."""
     s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, insert=0, delete=0, substitute=None, match_score=1, local=False, maximize=True)
+    matrix = _dp_matrix(s1, s2, insert=0, delete=0, substitute=None, match_score=1, boundary=(0, 0), combine="max")
     i, j = len(s1), len(s2)
     subseq = []
     while i > 0 and j > 0:

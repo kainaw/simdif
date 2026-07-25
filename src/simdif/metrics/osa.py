@@ -36,11 +36,11 @@ def dist_osa(a, b, **kwargs) -> float:
     if isinstance(a, str) and isinstance(b, str) and 'rapidfuzz' in sys.modules:
         return float(sys.modules['rapidfuzz'].distance.OSA.distance(a, b))
     s1, s2 = to_list(a), to_list(b)
-    return _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=1, local=False, maximize=False)[-1][-1]
+    return _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=1, boundary=(1, 1), combine="min")[-1][-1]
 
 
 def matrix_osa(a, b, **kwargs):
-    return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=1, transpose=1, local=False, maximize=False)
+    return _fill_dp_matrix(a, b, insert=1, delete=1, substitute=1, transpose=1, boundary=(1, 1), combine="min")
 
 
 METRICS['osa'] = {

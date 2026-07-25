@@ -1,6 +1,6 @@
 # simdif
 
-**simdif** is a pure-Python library for computing, comparing, and understanding similarity, difference, and distance metrics. It started as a collection of similarity and difference metrics, and has grown to include distance metrics and alignment scores (Smith-Waterman, Needleman-Wunsch). The design goal is **education first**: every metric ships with a step-by-step explanation function and a plain-English definition function so you can see exactly how a score is derived.
+**simdif** is a pure-Python library for computing, comparing, and understanding similarity, difference, and distance metrics. It started as a collection of similarity and difference metrics, and has grown to include distance metrics and alignment scores (Smith-Waterman, Needleman-Wunsch, Affine Gap). The design goal is **education first**: every metric ships with a step-by-step explanation function and a plain-English definition function so you can see exactly how a score is derived.
 
 > ⚠️ **Not intended for large-scale or production workloads.** simdif is pure Python and prioritises clarity over speed. It is well-suited for classroom use, small experiments, and learning how metrics work - not for processing large datasets or performance-critical pipelines.
 
@@ -158,6 +158,72 @@ The two strings are turned into lists. Where appropriate, the ASCII characters a
 
 ---
 
+## Gram Utilities
+
+Not every useful variant needs its own metric file. `to_qgram`, `to_skipgram`, and `to_count_vector` are **tokenizers, not metrics** - they turn a sequence into grams, and you compose the result with whatever `set` or `vector` metric already does what you want (`jaccard`, `cosine_set`, `cosine`, `manhattan`, ...). This is how simdif covers q-gram distance, n-gram cosine, skip-gram similarity, and Jaccard-on-q-grams without four near-duplicate metric files.
+
+> ⚠️ **`to_skipgram` is a brute-force, unoptimized enumeration** (consistent with simdif's overall design goal of clarity over speed). Fine for classroom-length strings; combinatorially expensive for long sequences or a large `k`.
+
+### `to_qgram(val, n=2, pad=None)`
+
+Breaks a sequence into contiguous n-grams ("shingles"). Returns a list of joined strings for string input, or tuples otherwise. Sequences shorter than `n` return an empty list unless padded long enough to reach it.
+
+```python
+from simdif import to_qgram
+
+to_qgram("hello", 2)          # ['he', 'el', 'll', 'lo']
+to_qgram("hi", 2, pad="$")    # ['$h', 'hi', 'i$']
+                               # (pad both ends so edge characters appear in as many
+                               #  grams as interior ones)
+```
+
+### `to_skipgram(val, n=2, k=1)`
+
+Like `to_qgram`, but allows up to `k` skipped elements between each consecutively-chosen position (k-skip-n-grams). `k=0` is identical to `to_qgram(val, n)`.
+
+```python
+from simdif import to_skipgram
+
+to_skipgram("ABCD", 2, 1)     # ['AB', 'AC', 'BC', 'BD', 'CD']
+```
+
+### `to_count_vector(a, b)`
+
+Turns two gram lists (or any two lists of hashable tokens) into two aligned numeric count vectors over their combined vocabulary. This is the piece `cosine` / `manhattan` / `minkowski` need - they compare counts position by position - that `jaccard` / `cosine_set` don't, since those only care about set membership.
+
+```python
+from simdif import to_count_vector
+
+to_count_vector(['ni', 'ig', 'gh', 'ht'], ['na', 'ac', 'ch', 'ht'])
+# ([0, 0, 1, 1, 1, 0, 1], [1, 1, 0, 1, 0, 1, 0])
+```
+
+### Composing gram-based metrics
+
+| Want | Compose as |
+|---|---|
+| Jaccard on q-grams | `sim(to_qgram(a, n), to_qgram(b, n), 'jaccard')` |
+| Skip-gram similarity | `sim(to_skipgram(a, n, k), to_skipgram(b, n, k), 'jaccard')` |
+| N-gram cosine | `sim(*to_count_vector(to_qgram(a, n), to_qgram(b, n)), 'cosine')` |
+| Q-gram distance | `dist(*to_count_vector(to_qgram(a, n), to_qgram(b, n)), 'manhattan')` |
+
+```python
+from simdif import to_qgram, to_skipgram, to_count_vector, sim, dist
+
+a, b = "night", "nacht"
+qa, qb = to_qgram(a, 2), to_qgram(b, 2)
+
+sim(qa, qb, 'jaccard')                # Jaccard on q-grams   -> 0.1429
+va, vb = to_count_vector(qa, qb)
+sim(va, vb, 'cosine')                 # N-gram cosine        -> 0.25
+dist(va, vb, 'manhattan')             # Q-gram distance      -> 6
+
+ska, skb = to_skipgram(a, 2, 1), to_skipgram(b, 2, 1)
+sim(ska, skb, 'jaccard')              # Skip-gram similarity -> 0.0769
+```
+
+---
+
 ## Metrics Reference
 
 Metrics marked with an alias share their implementation with the canonical name. All aliases are fully supported in both `simdif()` calls and standalone `explain_` / `info_` functions.
@@ -200,6 +266,7 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | `affine_gap` | `gotoh` | score |
 | `bm25` | `okapi`, `okapi_bm25` | score |
 | `damerau_levenshtein` | `dl` | dist |
+| `dtw` | - | dist |
 | `indel` | - | dist |
 | `jaro` | - | sim |
 | `jaro_winkler` | - | sim |
@@ -213,14 +280,20 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | `needleman_wunsch` | `needleman`, `wunsch` | score |
 | `osa` | - | dist |
 | `p_distance` | `p_dist` | dist |
+| `prefix` | - | score |
 | `ratcliff_obershelp` | `gestalt`, `ro`, `ratcliff`, `obershelp` | sim |
 | `smith_waterman` | `smith`, `waterman` | score |
 | `soundex` | - | sim |
 | `spearman` | - | sim |
+| `suffix` | - | score |
 
 > **BM25 takes a corpus.** `bm25` scores a query A against a document B and is the one sequence metric that needs external context: an optional `corpus` keyword (a list of documents, each a list of terms) supplies the IDF and average document length - the same pattern as `n_universe` for the set metrics. Without it, A and B are used as a degenerate 2-document corpus. Tune `k1` (term-frequency saturation) and `b_norm` (length normalization; named to avoid clashing with the document argument B). Example: `simdif(query, doc, ['bm25'], corpus=[doc1, doc2, ...])`.
 
 > **Evolutionary distances** (`p_distance`, `jukes_cantor`, `kimura`) estimate how far two aligned sequences have diverged - a progression from raw observation to biological correction. `p_distance` is the observed proportion of differing sites (generic, `==` only). `jukes_cantor` corrects it for multiple substitutions under a k-state model (`k=4` for DNA by default; `k=20` for protein). `kimura` (K80) additionally splits transitions from transversions, so it needs a symbol partition via the `groups` keyword (defaults to DNA purines `{A,G}` / pyrimidines `{C,T}`, case-insensitive); sites with out-of-group symbols are skipped. Both corrected distances saturate to `inf` when sequences are too diverged to estimate, and both assume inputs are already aligned (pair them with `needleman_wunsch` / `smith_waterman`).
+
+> **LCS's `sim`/`dif` are tied to `dist`, not to `score`'s own range.** `score_lcs` naturally ranges `[0, min(|A|,|B|)]`, but `sim_lcs` is defined as `1 - dist_lcs/(|A|+|B|)` (equivalently `2·LCS(A,B)/(|A|+|B|)`), so it stays consistent with the already-registered `dist_lcs` (indel distance) rather than with `score`'s range. Concretely: `sim_lcs=1.0` iff `A == B` exactly - a short string that's fully contained as a subsequence of a much longer one (e.g. `"AB"` vs `"ABCDEFG"`) does **not** score 1.0, since the length mismatch still counts against it (same behavior as `sim_levenshtein`).
+
+> **`prefix`/`suffix` are blind to the other end of the string**, and their `sim` is normalized by the *longer* string's length, not the shorter one - so a string that's a strict prefix (or suffix) of another still doesn't score `sim=1.0` (e.g. `sim_prefix("test", "testing")` is `4/7`, not `1.0`). `prefix` ignores everything after the first mismatch from the start; `suffix` ignores everything before the first mismatch counting backward from the end - two strings can share nothing on `prefix` while sharing everything on `suffix`, or vice versa (compare `simdif("prefix", "preheat", ['prefix','suffix'])` against `simdif("suffix", "postfix", ['prefix','suffix'])`).
 
 ### Vector Metrics
 
@@ -302,9 +375,9 @@ Many metrics can return more than one type of output. The table below shows what
 | `sim` | Similarity - higher is more similar (typically 0–1) |
 | `dif` | Difference - higher is more different (typically 0–1) |
 | `dist` | Distance - higher means further apart (range varies by metric) |
-| `score` | Raw alignment score (Smith-Waterman, Needleman-Wunsch, LCS) |
-| `matrix` | Full dynamic programming matrix (Levenshtein, NW, SW, LCS) |
-| `trace` | Recovered structure from the DP matrix: the alignment path (NW, SW) or the longest common subsequence itself (LCS) |
+| `score` | Raw alignment score (Smith-Waterman, Needleman-Wunsch, Affine Gap, LCS, Prefix, Suffix) |
+| `matrix` | Full dynamic programming matrix (Levenshtein, NW, SW, Affine Gap, LCS) |
+| `trace` | Recovered structure from the DP matrix: the alignment path (NW, SW, Affine Gap) or the longest common subsequence itself (LCS) |
 
 To request a specific output type:
 

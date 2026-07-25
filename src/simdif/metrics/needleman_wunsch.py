@@ -47,21 +47,21 @@ explain_wunsch = explain_needleman_wunsch
 @Metric
 def score_needleman_wunsch(a, b, match_score=1, mismatch_penalty=-1, gap_penalty=-1) -> int:
     s1, s2 = to_list(a), to_list(b)
-    return _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=False, maximize=True)[-1][-1]
+    return _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, boundary=(gap_penalty, gap_penalty), combine="max")[-1][-1]
 score_needleman = score_needleman_wunsch
 score_wunsch = score_needleman_wunsch
 
 
 def trace_needleman_wunsch(a, b, match_score=1, mismatch_penalty=-1, gap_penalty=-1, gap_symbol="-"):
     s1, s2 = to_list(a), to_list(b)
-    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=False, maximize=True)
+    matrix = _dp_matrix(s1, s2, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, boundary=(gap_penalty, gap_penalty), combine="max")
     return _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local=False, gap_symbol=gap_symbol)
 trace_needleman = trace_needleman_wunsch
 trace_wunsch = trace_needleman_wunsch
 
 
 def matrix_needleman_wunsch(a, b, match_score=1, mismatch_penalty=-1, gap_penalty=-1):
-    return _fill_dp_matrix(a, b, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, local=False, maximize=True)
+    return _fill_dp_matrix(a, b, insert=gap_penalty, delete=gap_penalty, substitute=mismatch_penalty, match_score=match_score, boundary=(gap_penalty, gap_penalty), combine="max")
 matrix_needleman = matrix_needleman_wunsch
 matrix_wunsch = matrix_needleman_wunsch
 

@@ -418,31 +418,43 @@ def to_list_numeric_aligned(a, b, **kwargs):
 # Edit Distance Metrics
 # ------------------------------------------------------------------
 
-def _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=None, match_score=None, local=False, maximize=False) -> list:
+_DP_COMBINERS = {"max": max, "min": min, "sum": sum}
+
+
+def _resolve_cost(param, a, b):
+    """A DP cost parameter (insert/delete/substitute/match_score/transpose) is
+    either a flat scalar or a callable(a, b) -> cost evaluated against the
+    current pair of elements -- e.g. a pointwise distance function for DTW."""
+    return param(a, b) if callable(param) else param
+
+
+def _dp_matrix(s1, s2, insert=1, delete=1, substitute=1, transpose=None, match_score=None, boundary=(1, 1), floor=None, combine="max") -> list:
     rows = len(s1) + 1
     cols = len(s2) + 1
     matrix = [[0] * cols for _ in range(rows)]
-    if not local:
-        for i in range(rows): matrix[i][0] = i * delete
-        for j in range(cols): matrix[0][j] = j * insert
+    row_step, col_step = boundary
+    for i in range(1, rows): matrix[i][0] = matrix[i-1][0] + row_step
+    for j in range(1, cols): matrix[0][j] = matrix[0][j-1] + col_step
+    combine_fn = combine if callable(combine) else _DP_COMBINERS[combine]
     for i in range(1, rows):
         for j in range(1, cols):
+            x, y = s1[i-1], s2[j-1]
             options = [
-                matrix[i-1][j] + delete,
-                matrix[i][j-1] + insert,
+                matrix[i-1][j] + _resolve_cost(delete, x, y),
+                matrix[i][j-1] + _resolve_cost(insert, x, y),
             ]
             diag = matrix[i-1][j-1]
-            if s1[i-1] == s2[j-1]:
+            if x == y:
                 # A match is always available (free, or scored by match_score),
                 # independent of whether substitution is enabled.
-                options.append(diag if match_score is None else diag + match_score)
+                options.append(diag if match_score is None else diag + _resolve_cost(match_score, x, y))
             elif substitute is not None:
-                options.append(diag + substitute)
+                options.append(diag + _resolve_cost(substitute, x, y))
             if transpose is not None and i > 1 and j > 1:
                 if s1[i-1] == s2[j-2] and s1[i-2] == s2[j-1]:
-                    options.append(matrix[i-2][j-2] + transpose)
-            cell = max(options) if maximize else min(options)
-            matrix[i][j] = max(0, cell) if local else cell
+                    options.append(matrix[i-2][j-2] + _resolve_cost(transpose, x, y))
+            cell = combine_fn(options)
+            matrix[i][j] = max(floor, cell) if floor is not None else cell
     return matrix
 
 def _backtrack(matrix, s1, s2, match_score, mismatch_penalty, gap_penalty, local=False, gap_symbol="-"):
