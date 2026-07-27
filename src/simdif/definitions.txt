@@ -219,7 +219,37 @@ The **Longest Common Subsequence** finds the length of the longest subsequence p
 
 **Range (dist):** [0, len(A) + len(B)] computed as len(A) + len(B) - 2 * score
 
-**Note:** Distinct from Longest Common Substring, which requires contiguous matching elements.
+**Range (sim):** [0, 1] computed as 1 - dist / (len(A) + len(B))
+
+**Note:** Distinct from Longest Common Substring (`lc_substring`), which requires contiguous matching elements. Both are abbreviated "LCS" in common writing; simdif resolves the bare name `lcs` to this subsequence variant.
+
+**Note:** A DP cell holds the best score over all prefixes up to that pair of positions, so the matrix is non-decreasing and the answer is the bottom-right corner.
+
+**Aliases:** `lc_subsequence`, `lcsubseq`, `longest_common_subsequence`
+
+---
+
+## lc_substring
+
+The **Longest Common Substring** finds the length of the longest run of elements present in both sequences *contiguously* — no skipping.
+
+**Formula:** Computed via dynamic programming.
+
+$$L(i, j) = \begin{cases} L(i-1, j-1) + 1 & \text{if } A_i = B_j \\ 0 & \text{otherwise} \end{cases}$$
+
+$$\text{LCSubstr}(A, B) = \max_{i, j} L(i, j)$$
+
+**Range (score):** [0, min(len(A), len(B))]
+
+**Range (sim):** [0, 1] computed as score / max(len(A), len(B))
+
+**Note:** Distinct from Longest Common Subsequence (`lcs`), which allows gaps. For "ABCDE" vs "AXBXCXDXE" the subsequence score is 5 and the substring score is 1.
+
+**Note:** A DP cell holds the length of the run *ending exactly* at that pair of positions, so the matrix is not monotone and the answer is the largest cell anywhere — not the bottom-right corner. This is the same clamp-to-zero trick that turns Needleman-Wunsch (global) into Smith-Waterman (local); `lc_substring` is `smith_waterman` with mismatch and gap penalties of -inf.
+
+**Note:** No `dist` role is provided. len(A) + len(B) - 2 * score counts no sequence of edit operations here and is not a metric, unlike the indel distance that `lcs` exposes as its `dist`.
+
+**Aliases:** `lcstr`, `lcsubstr`, `longest_common_substring`
 
 ---
 

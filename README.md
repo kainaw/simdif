@@ -274,7 +274,8 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | `kendall_tau` | `kendall_tau_a`, `tau_a` | sim |
 | `kendall_tau_b` | `tau_b` | sim |
 | `kimura` | `k80`, `k2p` | dist |
-| `lcs` | - | score |
+| `lc_subsequence` | `lcs`, `lcsubseq`, `longest_common_subsequence` | score |
+| `lc_substring` | `lcstr`, `lcsubstr`, `longest_common_substring` | score |
 | `levenshtein` | - | dist |
 | `monge_elkan` | - | sim |
 | `needleman_wunsch` | `needleman`, `wunsch` | score |
@@ -291,7 +292,18 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 
 > **Evolutionary distances** (`p_distance`, `jukes_cantor`, `kimura`) estimate how far two aligned sequences have diverged - a progression from raw observation to biological correction. `p_distance` is the observed proportion of differing sites (generic, `==` only). `jukes_cantor` corrects it for multiple substitutions under a k-state model (`k=4` for DNA by default; `k=20` for protein). `kimura` (K80) additionally splits transitions from transversions, so it needs a symbol partition via the `groups` keyword (defaults to DNA purines `{A,G}` / pyrimidines `{C,T}`, case-insensitive); sites with out-of-group symbols are skipped. Both corrected distances saturate to `inf` when sequences are too diverged to estimate, and both assume inputs are already aligned (pair them with `needleman_wunsch` / `smith_waterman`).
 
-> **LCS's `sim`/`dif` are tied to `dist`, not to `score`'s own range.** `score_lcs` naturally ranges `[0, min(|A|,|B|)]`, but `sim_lcs` is defined as `1 - dist_lcs/(|A|+|B|)` (equivalently `2·LCS(A,B)/(|A|+|B|)`), so it stays consistent with the already-registered `dist_lcs` (indel distance) rather than with `score`'s range. Concretely: `sim_lcs=1.0` iff `A == B` exactly - a short string that's fully contained as a subsequence of a much longer one (e.g. `"AB"` vs `"ABCDEFG"`) does **not** score 1.0, since the length mismatch still counts against it (same behavior as `sim_levenshtein`).
+> **"LCS" is ambiguous - simdif ships both.** In common writing "LCS" names two different metrics: the longest common **subsequence** (gaps allowed) and the longest common **substring** (contiguous only). simdif resolves the bare name `lcs` to the subsequence variant, matching the algorithms-textbook default and simdif's own earlier releases, but every unambiguous name is registered too - use `lc_subsequence` / `lc_substring` when it matters, and check which recurrence a paper prints before comparing numbers. The difference is not cosmetic:
+>
+> ```python
+> simdif("ABCDE", "AXBXCXDXE", ['lc_subsequence', 'lc_substring'])
+> # {'lc_subsequence': 5, 'lc_substring': 1}
+> ```
+>
+> The two share a DP scaffold but not its meaning. In `lc_subsequence` a cell holds the best score over all prefixes, so the grid is non-decreasing and the answer is the bottom-right corner. In `lc_substring` a cell holds the length of the run *ending exactly there*, mismatches reset it to `0`, and the answer is the largest cell anywhere - the same clamp-to-zero trick that turns `needleman_wunsch` (global) into `smith_waterman` (local). `lc_substring` is in fact `smith_waterman` with mismatch and gap penalties of `-inf`.
+
+> **LC subsequence's `sim`/`dif` are tied to `dist`, not to `score`'s own range.** `score_lcs` naturally ranges `[0, min(|A|,|B|)]`, but `sim_lcs` is defined as `1 - dist_lcs/(|A|+|B|)` (equivalently `2·LCS(A,B)/(|A|+|B|)`), so it stays consistent with the already-registered `dist_lcs` (indel distance) rather than with `score`'s range. Concretely: `sim_lcs=1.0` iff `A == B` exactly - a short string that's fully contained as a subsequence of a much longer one (e.g. `"AB"` vs `"ABCDEFG"`) does **not** score 1.0, since the length mismatch still counts against it (same behavior as `sim_levenshtein`).
+
+> **`lc_substring` has no `dist` role, and normalizes by the longer input.** The indel-distance identity that gives `lc_subsequence` its `dist` doesn't carry over: `|A| + |B| - 2·LCSubstr` counts no sequence of edit operations and isn't a metric, so it is deliberately not offered under that name. With no `dist` to stay consistent with, `sim_lc_substring` is `score / max(|A|,|B|)` - the `prefix`/`suffix` convention - so a strictly contained run still scores below 1.0 (`sim_lc_substring("BCD", "ABCDE")` is `3/5`).
 
 > **`prefix`/`suffix` are blind to the other end of the string**, and their `sim` is normalized by the *longer* string's length, not the shorter one - so a string that's a strict prefix (or suffix) of another still doesn't score `sim=1.0` (e.g. `sim_prefix("test", "testing")` is `4/7`, not `1.0`). `prefix` ignores everything after the first mismatch from the start; `suffix` ignores everything before the first mismatch counting backward from the end - two strings can share nothing on `prefix` while sharing everything on `suffix`, or vice versa (compare `simdif("prefix", "preheat", ['prefix','suffix'])` against `simdif("suffix", "postfix", ['prefix','suffix'])`).
 
