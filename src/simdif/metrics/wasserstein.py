@@ -1,6 +1,7 @@
 import sys
 from bisect import bisect_left
 from ..simdif import Metric, METRICS, to_distribution
+from ._helpers import _sim_from_dist, _dif_from_dist, _max_line
 
 
 def info_wasserstein() -> str:
@@ -22,9 +23,22 @@ Parameters:
     p - the order of the distance (default 1). p = 1 is the Earth Mover's
         Distance; p = 2 is the quadratic Wasserstein distance.
 
-Range: [0, inf)
+Roles:
+    dist - W_p(P, Q) (>= 0, unbounded)
+    sim  - 1 / (1 + W_p), or 1 - dif when d_max is supplied
+    dif  - 1 - sim,       or W_p / d_max when d_max is supplied
+
+Range (dist): [0, inf)
     0 = identical distributions. Not clamped to [0, 1]: a small amount of mass
     moved a long way can outweigh a large amount moved a short way.
+
+Note: W_p is unbounded because it carries units of bin position, so sim
+defaults to the 1/(1+W_p) squash. There is no distribution-free ceiling to
+divide by; if you need a linear dif, pass d_max (e.g. the number of bins),
+which makes it a declared convention rather than a derived bound.
+
+WARNING -- d_max must be a real bound. Values above it clamp to dif=1.0,
+so every pair beyond d_max scores identically. explain_ reports the clamp.
 
 Assumptions: bins are ordered and equally spaced, so the ground distance
 between bin i and bin j is |i - j|. Inputs are normalized into probability
@@ -94,6 +108,7 @@ def explain_wasserstein(a, b, p=1, **kwargs) -> str:
             i_q = bisect_left(cq, t)
             steps.append(f"  t in ({prev:.4f}, {t:.4f}]  width {width:.4f}: |bin {i_p} - bin {i_q}|^{p} = {abs(i_p - i_q) ** p}")
         prev = t
+    d = _wasserstein(a, b, p)
     return f"""
 P (A): {a}
 Q (B): {b}
@@ -101,7 +116,9 @@ CDF(P): {[round(v, 4) for v in cp]}
 CDF(Q): {[round(v, 4) for v in cq]}
 Quantile-space contributions (order p={p}):
 {chr(10).join(steps)}
-Wasserstein Distance W_{p}: {_wasserstein(a, b, p):.4f}
+Wasserstein Distance W_{p}: {d:.4f}
+{_max_line(d, kwargs.get('d_max'),
+           unbounded_note="unbounded -- W_p carries units of bin position")}
     """.strip()
 explain_earth_mover = explain_wasserstein
 explain_emd = explain_wasserstein
@@ -131,10 +148,26 @@ dist_earth_mover = dist_wasserstein
 dist_emd = dist_wasserstein
 
 
+@Metric
+def dif_wasserstein(a, b, p=1, **kwargs) -> float:
+    return _dif_from_dist(dist_wasserstein(a, b, p, **kwargs), kwargs.get('d_max'))
+dif_earth_mover = dif_wasserstein
+dif_emd = dif_wasserstein
+
+
+@Metric
+def sim_wasserstein(a, b, p=1, **kwargs) -> float:
+    return _sim_from_dist(dist_wasserstein(a, b, p, **kwargs), kwargs.get('d_max'))
+sim_earth_mover = sim_wasserstein
+sim_emd = sim_wasserstein
+
+
 METRICS['wasserstein'] = {
     'class': 'vector',
     'default': 'dist',
     'dist': dist_wasserstein,
+    'dif': dif_wasserstein,
+    'sim': sim_wasserstein,
     'info': info_wasserstein,
     'explain': explain_wasserstein,
 }

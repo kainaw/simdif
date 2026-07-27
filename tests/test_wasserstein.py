@@ -1,6 +1,6 @@
 import pytest
-from simdif.metrics.wasserstein import dist_wasserstein
-from simdif import wasserstein, dist, simdif
+from simdif.metrics.wasserstein import dist_wasserstein, sim_wasserstein, dif_wasserstein
+from simdif import wasserstein, dist, sim, dif, simdif
 
 def test_wasserstein():
     # Identical distributions -> 0.
@@ -26,3 +26,22 @@ def test_wasserstein():
     # Aliases earth_mover / emd resolve to the same metric.
     assert simdif([1, 0, 0], [0, 0, 1], ['emd']) == {'emd': pytest.approx(2.0)}
     assert dist([1, 0, 0], [0, 0, 1], 'earth_mover') == pytest.approx(2.0)
+
+
+def test_wasserstein_sim_dif():
+    # Identical distributions -> sim 1, dif 0.
+    assert sim_wasserstein([0.5, 0.5], [0.5, 0.5]) == pytest.approx(1.0)
+    assert dif_wasserstein([0.5, 0.5], [0.5, 0.5]) == pytest.approx(0.0)
+    # Default squash: sim = 1/(1+D), dif = 1 - sim.
+    assert sim_wasserstein([1, 0], [0, 1]) == pytest.approx(1 / (1 + 1.0))
+    assert dif_wasserstein([1, 0], [0, 1]) == pytest.approx(1 - 1 / (1 + 1.0))
+    assert sim_wasserstein([1, 0], [0, 1]) + dif_wasserstein([1, 0], [0, 1]) == pytest.approx(1.0)
+    # d_max makes dif the linear rescale D / d_max, sim = 1 - dif.
+    assert dif_wasserstein([1, 0], [0, 1], d_max=2) == pytest.approx(0.5)
+    assert sim_wasserstein([1, 0], [0, 1], d_max=2) == pytest.approx(0.5)
+    # Values beyond d_max clamp to dif=1.0 / sim=0.0.
+    assert dif_wasserstein([1, 0, 0], [0, 0, 1], d_max=1) == pytest.approx(1.0)
+    assert sim_wasserstein([1, 0, 0], [0, 0, 1], d_max=1) == pytest.approx(0.0)
+    # Role dispatcher + convenience names.
+    assert sim([1, 0], [0, 1], 'wasserstein') == pytest.approx(1 / (1 + 1.0))
+    assert dif([1, 0], [0, 1], 'emd') == pytest.approx(1 - 1 / (1 + 1.0))

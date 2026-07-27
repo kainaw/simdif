@@ -240,7 +240,7 @@ sim(ska, skb, 'jaccard')              # Skip-gram similarity -> 0.0769
 
 Metrics marked with an alias share their implementation with the canonical name. All aliases are fully supported in both `simdif()` calls and standalone `explain_` / `info_` functions.
 
-**Default Output** is what you get when you don't ask for anything specific - `simdif(a, b, ['jaccard'])` or the bare `jaccard(a, b)`. **Available Outputs** lists every output type that metric offers; request one with `output=` or the matching dispatcher, e.g. `dif(a, b, 'jaccard')` or `simdif(a, b, ['jaccard'], output='dif')`. See [Output Types](#output-types) for what each one means. `explain_` and `info_` are omitted from the column because **every** metric has both.
+**Default** is what you get when you don't ask for anything specific - `simdif(a, b, ['jaccard'])` or the bare `jaccard(a, b)`. **Available Outputs** lists every output type that metric offers; request one with `output=` or the matching dispatcher, e.g. `dif(a, b, 'jaccard')` or `simdif(a, b, ['jaccard'], output='dif')`. See [Output Types](#output-types) for what each one means. `explain_` and `info_` are omitted from the column because **every** metric has both.
 
 ### Set Metrics
 
@@ -390,7 +390,7 @@ These metrics measure how much two probability distributions differ.
 | `hellinger` | - | dist | `dist`, `sim` |
 | `js_divergence` | `jensen_shannon` | dist | `dist`, `sim`, `dif` |
 | `kl_divergence` | `kullback_leibler` | dist | `dist`, `sim`, `dif` |
-| `wasserstein` | `earth_mover`, `emd` | dist | `dist` |
+| `wasserstein` | `earth_mover`, `emd` | dist | `dist`, `sim`, `dif` |
 
 ### Two-Sample Statistics
 
