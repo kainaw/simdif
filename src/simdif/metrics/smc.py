@@ -22,7 +22,7 @@ to Jaccard similarity.
 info_sokal_michener = info_smc
 
 
-def explain_smc(a, b, n_universe, **_) -> str:
+def explain_smc(a, b, n_universe=None, **_) -> str:
     a_set, b_set = to_set(a), to_set(b)
     n00, n01, n10, n11 = _aleph_counts(a, b, n_universe)
     n_total = n11 + n10 + n01 + n00

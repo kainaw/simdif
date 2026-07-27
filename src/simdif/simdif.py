@@ -95,6 +95,8 @@ def simdif(a, b, metric, **kwargs):
     if isinstance(metric, (list, tuple, set)):
         return {m: simdif(a, b, m, **kwargs) for m in metric}
     role, func, base = _resolve_metric(metric)
+    if role == 'info':
+        return func()   # documentation does not depend on the inputs
     return func(a, b, **kwargs)
 
 
@@ -148,17 +150,26 @@ def matrix(a, b, metric, **kwargs):
         return {m: matrix(a, b, m, **kwargs) for m in metric}
     role, func, base = _resolve_metric("matrix_"+metric)
     if role != 'matrix':
-        raise ValueError(f"Metric '{metric}' is a '{role}', not a trace metric")
+        raise ValueError(f"Metric '{metric}' is a '{role}', not a matrix metric")
     return func(a, b, **kwargs)
 
 
-def info(a, b, metric, **kwargs):
+def info(*args, **kwargs):
+    """Return a metric's documentation string.
+
+    info_* functions are pure documentation -- they take no arguments and just
+    return text. So this dispatcher calls them with none, and the natural call
+    is info('jaccard'). The info(a, b, 'jaccard') form is accepted too, purely
+    so info can drop into the same call site as sim()/dist()/explain() without
+    a special case; a, b, and any kwargs are ignored rather than forwarded.
+    """
+    if not args:
+        raise ValueError("info() requires a metric name")
+    metric = args[-1]
     if isinstance(metric, (list, tuple, set)):
-        return {m: info(a, b, m, **kwargs) for m in metric}
+        return {m: info(m) for m in metric}
     role, func, base = _resolve_metric("info_"+metric)
-    if role != 'info':
-        raise ValueError(f"Metric '{metric}' is a '{role}', not a trace metric")
-    return func(a, b, **kwargs)
+    return func()
 
 
 def explain(a, b, metric, **kwargs):
@@ -166,7 +177,7 @@ def explain(a, b, metric, **kwargs):
         return {m: explain(a, b, m, **kwargs) for m in metric}
     role, func, base = _resolve_metric("explain_"+metric)
     if role != 'explain':
-        raise ValueError(f"Metric '{metric}' is a '{role}', not a trace metric")
+        raise ValueError(f"Metric '{metric}' is a '{role}', not an explain metric")
     return func(a, b, **kwargs)
 
 

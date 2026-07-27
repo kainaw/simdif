@@ -28,29 +28,38 @@ Note: This is an index, not a coefficient.
 
 
 def explain_tversky(a, b, alpha=0.5, beta=0.5, **_) -> str:
-    a, b = to_set(a), to_set(b)
-    i = sorted(map(str, a & b))
-    u = sorted(map(str, a | b))
-    a = sorted(map(str, a))
-    b = sorted(map(str, b))
-    ua = sorted(map(str, a - b))
-    ub = sorted(map(str, b - a))
-    ni = len(i)
-    nu = len(u)
-    nua = len(ua)
-    nub = len(ub)
+    # Set operations first: rebinding a/b to sorted lists for display before
+    # taking a - b turns the difference into list subtraction (a TypeError).
+    sa, sb = to_set(a), to_set(b)
+    i = sorted(map(str, sa & sb))
+    u = sorted(map(str, sa | sb))
+    ua = sorted(map(str, sa - sb))
+    ub = sorted(map(str, sb - sa))
+    ni, nu, nua, nub = len(i), len(u), len(ua), len(ub)
+
+    # The denominator is |A∩B| + α|A-B| + β|B-A|, NOT the union -- Tversky is
+    # asymmetric precisely because the two unique sides carry separate weights.
+    denominator = ni + alpha * nua + beta * nub
+    if denominator > 0:
+        arithmetic = f"{ni} / ({ni} + {alpha}×{nua} + {beta}×{nub}) = {ni} / {denominator}"
+        similarity = f"{sim_tversky(a, b, alpha, beta):.4f}"
+        difference = f"{dif_tversky(a, b, alpha, beta):.4f}"
+    else:
+        arithmetic = f"{ni} / 0"
+        similarity = difference = "Division by Zero"
     return f"""
-A: ({", ".join(a)})
-B: ({", ".join(b)})
+A: ({", ".join(sorted(map(str, sa)))})
+B: ({", ".join(sorted(map(str, sb)))})
 α: {alpha}
 β: {beta}
 T(A, B) = |A ∩ B| / (|A ∩ B| + α|A - B| + β|B - A|)
 Intersection: ({", ".join(i)}), length {ni}
 Union: ({", ".join(u)}), length {nu}
-Unique to A: ({", ".join(ua)})
-Unique to B: ({", ".join(ub)})
-Similarity: {ni} / ({nu} + {alpha}×{nua} + {beta}×{nub} = {ni / (nu+alpha*nua+beta*nub) if nu+alpha*nua+beta*nub>0 else 'Division by Zero'}
-Difference: 1 - Similarity = {1 - ni / (nu+alpha*nua+beta*nub) if nu+alpha*nua+beta*nub>0 else 'Division by Zero'}
+Unique to A: ({", ".join(ua)}), length {nua}
+Unique to B: ({", ".join(ub)}), length {nub}
+Calculation: {arithmetic}
+Similarity: {similarity}
+Difference: 1 - Similarity = {difference}
     """.strip()
 
 

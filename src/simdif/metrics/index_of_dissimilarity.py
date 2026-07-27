@@ -11,7 +11,7 @@ Formula:
 Range: [0,1]
 
 Aliases: Hoover, Duncan
-""".trim()
+""".strip()
 info_hoover = info_index_of_dissimilarity
 info_duncan = info_index_of_dissimilarity
 
@@ -19,12 +19,12 @@ info_duncan = info_index_of_dissimilarity
 def explain_index_of_dissimilarity(a, b, **kwargs) -> str:
     a, b = to_list_numeric_aligned(a, b, **kwargs)
     return f"""
-A: ({", ".join(a)})
-B: ({", ".join(b)})
+A: ({", ".join(map(str, a))})
+B: ({", ".join(map(str, b))})
 Sum(A): {sum(a)}
 Sum(B): {sum(b)}
-Difference: {dif_index_of_dissimilarity(a,b)}
-    """.trim()
+Difference: {dif_index_of_dissimilarity(a, b):.4f}
+    """.strip()
 explain_hoover = explain_index_of_dissimilarity
 explain_duncan = explain_index_of_dissimilarity
 

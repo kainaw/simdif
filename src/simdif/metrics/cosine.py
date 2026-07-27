@@ -42,9 +42,10 @@ Calculation:
   dot(A,B) / (||A|| * ||B||)
 = {dot} / {norm_a * norm_b:.4f}
 = {sim:.4f}
-Difference: {dif_cosine(a, b):.4f}
-Distance:   {dist_cosine(a, b):.4f}
     """.strip()
+# No Difference/Distance lines: cosine registers a 'sim' role only. Cosine
+# similarity runs [-1, 1], so 1 - sim is not a distance on signed vectors, and
+# monge_elkan's info documents method="cosine" as having no dist role.
 
 
 @Metric

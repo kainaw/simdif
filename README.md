@@ -94,6 +94,18 @@ from simdif import info_jaccard
 info_jaccard()
 ```
 
+`info_*` functions are pure documentation - they take no arguments and return a string. The `info()` dispatcher takes the metric name alone, and resolves aliases:
+
+```python
+from simdif import info
+
+info('jaccard')
+info('linf')                      # same text as info('chebyshev')
+info(['jaccard', 'chebyshev'])    # {'jaccard': '...', 'chebyshev': '...'}
+```
+
+`info(a, b, 'jaccard')` is also accepted, so `info` can drop into the same call site as `sim`/`dist`/`explain`; `a` and `b` are ignored, since documentation does not depend on the inputs.
+
 ```
 Jaccard Similarity (Jaccard Index / IoU)
 ----------------------------------------
