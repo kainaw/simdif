@@ -240,30 +240,32 @@ sim(ska, skb, 'jaccard')              # Skip-gram similarity -> 0.0769
 
 Metrics marked with an alias share their implementation with the canonical name. All aliases are fully supported in both `simdif()` calls and standalone `explain_` / `info_` functions.
 
+**Default Output** is what you get when you don't ask for anything specific - `simdif(a, b, ['jaccard'])` or the bare `jaccard(a, b)`. **Available Outputs** lists every output type that metric offers; request one with `output=` or the matching dispatcher, e.g. `dif(a, b, 'jaccard')` or `simdif(a, b, ['jaccard'], output='dif')`. See [Output Types](#output-types) for what each one means. `explain_` and `info_` are omitted from the column because **every** metric has both.
+
 ### Set Metrics
 
 These metrics treat inputs as unordered collections. Element frequency is ignored; only membership matters.
 
-| Canonical Name | Aliases | Default Output |
-|---|---|---|
-| `baroni_urbani_buser` | `bub`, `baroni_urbani` | sim |
-| `braun_blanquet` | - | sim |
-| `cosine_set` | `ochiai` | sim |
-| `dice_sorensen` | `dice`, `sorensen`, `sorensen_dice` | sim |
-| `jaccard` | `iou` | sim |
-| `kulczynski` | `kulczynski_ii` | sim |
-| `kulczynski_i` | - | sim |
-| `mcconnaughey` | - | sim |
-| `mountford` | - | sim |
-| `overlap` | `szymkiewicz_simpson`, `simpson` | sim |
-| `phi` | `mcc`, `matthews` | sim |
-| `rogers_tanimoto` | `sokal_ii`, `sokal_michener_ii`, `sokal_sneath_ii` | sim |
-| `russel_rao` | `russell_rao`, `rr` | sim |
-| `smc` | `sokal_michener` | sim |
-| `sokal_sneath_i` | `ssi` | sim |
-| `sokal_sneath_iii` | `ssiii` | sim |
-| `tversky` | - | sim |
-| `yule_q` | - | sim |
+| Canonical Name | Aliases | Default Output | Available Outputs |
+|---|---|---|---|
+| `baroni_urbani_buser` | `bub`, `baroni_urbani` | sim | `sim`, `dif` |
+| `braun_blanquet` | - | sim | `sim`, `dif` |
+| `cosine_set` | `ochiai` | sim | `sim`, `dif` |
+| `dice_sorensen` | `dice`, `sorensen`, `sorensen_dice` | sim | `sim`, `dif` |
+| `jaccard` | `iou` | sim | `sim`, `dif` |
+| `kulczynski` | `kulczynski_ii` | sim | `sim`, `dif` |
+| `kulczynski_i` | - | sim | `sim` |
+| `mcconnaughey` | - | sim | `sim` |
+| `mountford` | - | sim | `sim`, `dif` |
+| `overlap` | `szymkiewicz_simpson`, `simpson` | sim | `sim`, `dif` |
+| `phi` | `mcc`, `matthews` | sim | `sim` |
+| `rogers_tanimoto` | `sokal_ii`, `sokal_michener_ii`, `sokal_sneath_ii` | sim | `sim`, `dif` |
+| `russel_rao` | `russell_rao`, `rr` | sim | `sim`, `dif` |
+| `smc` | `sokal_michener` | sim | `sim`, `dif` |
+| `sokal_sneath_i` | `ssi` | sim | `sim`, `dif` |
+| `sokal_sneath_iii` | `ssiii` | sim | `sim`, `dif` |
+| `tversky` | - | sim | `sim`, `dif` |
+| `yule_q` | - | sim | `sim` |
 
 > **Universe-aware metrics.** `smc`, `rogers_tanimoto`, `phi`, `yule_q`, and `baroni_urbani_buser` use "shared absences" (elements in neither set), so they take an optional `n_universe` parameter giving the size of the total element space. Without it, shared absences count as 0, which makes the association measures (`phi`, `yule_q`) degenerate - always pass `n_universe` for those. `baroni_urbani_buser` reduces to Jaccard when `n_universe` is omitted, and credits shared absences through the geometric mean `sqrt(n11 * n00)` - the only set coefficient here that uses that term. Example: `simdif(a, b, ['phi', 'yule_q'], n_universe=26)`.
 
@@ -273,33 +275,33 @@ These metrics treat inputs as unordered collections. Element frequency is ignore
 
 These metrics treat inputs as ordered. The position of elements matters (e.g. `"abc" ≠ "bca"`).
 
-| Canonical Name | Aliases | Default Output |
-|---|---|---|
-| `affine_gap` | `gotoh` | score |
-| `bm25` | `okapi`, `okapi_bm25` | score |
-| `damerau_levenshtein` | `dl` | dist |
-| `dtw` | - | dist |
-| `indel` | - | dist |
-| `jaro` | - | sim |
-| `jaro_winkler` | - | sim |
-| `jukes_cantor` | `jc`, `jc69` | dist |
-| `kendall_tau` | `kendall_tau_a`, `tau_a` | sim |
-| `kendall_tau_b` | `tau_b` | sim |
-| `kimura` | `k80`, `k2p` | dist |
-| `lc_subsequence` | `lcs`, `lcsubseq`, `longest_common_subsequence` | score |
-| `lc_substring` | `lcstr`, `lcsubstr`, `longest_common_substring` | score |
-| `levenshtein` | - | dist |
-| `monge_elkan` | - | sim |
-| `ncd` | `normalized_compression_distance`, `compression`, `compression_distance` | dist |
-| `needleman_wunsch` | `needleman`, `wunsch` | score |
-| `osa` | - | dist |
-| `p_distance` | `p_dist` | dist |
-| `prefix` | - | score |
-| `ratcliff_obershelp` | `gestalt`, `ro`, `ratcliff`, `obershelp` | sim |
-| `smith_waterman` | `smith`, `waterman` | score |
-| `soundex` | - | sim |
-| `spearman` | - | sim |
-| `suffix` | - | score |
+| Canonical Name | Aliases | Default Output | Available Outputs |
+|---|---|---|---|
+| `affine_gap` | `gotoh` | score | `score`, `matrix`, `trace` |
+| `bm25` | `okapi`, `okapi_bm25` | score | `score` |
+| `damerau_levenshtein` | `dl` | dist | `dist` |
+| `dtw` | - | dist | `dist`, `sim`, `dif`, `matrix` |
+| `indel` | - | dist | `dist`, `matrix` |
+| `jaro` | - | sim | `sim`, `dif` |
+| `jaro_winkler` | - | sim | `sim`, `dif` |
+| `jukes_cantor` | `jc`, `jc69` | dist | `dist`, `sim`, `dif` |
+| `kendall_tau` | `kendall_tau_a`, `tau_a` | sim | `dist`, `sim` |
+| `kendall_tau_b` | `tau_b` | sim | `dist`, `sim` |
+| `kimura` | `k80`, `k2p` | dist | `dist`, `sim`, `dif` |
+| `lc_subsequence` | `lcs`, `lcsubseq`, `longest_common_subsequence` | score | `score`, `dist`, `sim`, `dif`, `matrix`, `trace` |
+| `lc_substring` | `lcstr`, `lcsubstr`, `longest_common_substring` | score | `score`, `sim`, `dif`, `matrix`, `trace` |
+| `levenshtein` | - | dist | `dist`, `sim`, `dif`, `matrix` |
+| `monge_elkan` | - | sim | `score`, `dist`, `sim`, `dif` |
+| `ncd` | `normalized_compression_distance`, `compression`, `compression_distance` | dist | `dist`, `sim`, `dif` |
+| `needleman_wunsch` | `needleman`, `wunsch` | score | `score`, `matrix`, `trace` |
+| `osa` | - | dist | `dist`, `matrix` |
+| `p_distance` | `p_dist` | dist | `dist`, `sim` |
+| `prefix` | - | score | `score`, `sim`, `dif` |
+| `ratcliff_obershelp` | `gestalt`, `ro`, `ratcliff`, `obershelp` | sim | `sim`, `dif`, `trace` |
+| `smith_waterman` | `smith`, `waterman` | score | `score`, `matrix`, `trace` |
+| `soundex` | - | sim | `sim`, `dif` |
+| `spearman` | - | sim | `dist`, `sim` |
+| `suffix` | - | score | `score`, `sim`, `dif` |
 
 > **BM25 takes a corpus.** `bm25` scores a query A against a document B and is the one sequence metric that needs external context: an optional `corpus` keyword (a list of documents, each a list of terms) supplies the IDF and average document length - the same pattern as `n_universe` for the set metrics. Without it, A and B are used as a degenerate 2-document corpus. Tune `k1` (term-frequency saturation) and `b_norm` (length normalization; named to avoid clashing with the document argument B). Example: `simdif(query, doc, ['bm25'], corpus=[doc1, doc2, ...])`.
 
@@ -330,23 +332,25 @@ These metrics require input to be ordered and same length.
 
 Most vector metrics require numeric input for mathematical operations.
 
-| Canonical Name | Aliases | Default Output |
-|---|---|---|
-| `bray_curtis` | - | dist |
-| `canberra` | - | dist |
-| `chebyshev` | `chessboard`, `linf` | dist |
-| `cosine` | - | sim |
-| `euclidean` | - | dist |
-| `geodesic` | `earth` | dist |
-| `hausdorff` | `hausdorff_distance`, `hd` | dist |
-| `index_of_dissimilarity` | `hoover`, `duncan` | dif |
-| `lee` | - | dist |
-| `mahalanobis` | - | dist |
-| `manhattan` | `taxicab`, `cityblock` | dist |
-| `minkowski` | - | dist |
-| `pearson` | - | sim |
-| `tanimoto` | `binary_tanimoto`, `tanimoto_binary` | sim |
-| `tanimoto_continuous` | `continuous_tanimoto`, `extended_tanimoto` | sim |
+| Canonical Name | Aliases | Default Output | Available Outputs |
+|---|---|---|---|
+| `bray_curtis` | - | dist | `dist`, `sim` |
+| `canberra` | - | dist | `dist`, `sim`, `dif` |
+| `chebyshev` | `chessboard`, `linf` | dist | `dist`, `sim`, `dif` |
+| `cosine` | - | sim | `dist`, `sim` |
+| `earth` | - | dist | `dist`, `sim`, `dif` |
+| `euclidean` | - | dist | `dist`, `sim`, `dif` |
+| `geodesic` | - | dist | `dist`, `sim`, `dif` |
+| `hausdorff` | `hausdorff_distance`, `hd` | dist | `dist`, `sim`, `dif` |
+| `hedgehog` | - | sim | `dist`, `sim`, `dif` |
+| `index_of_dissimilarity` | `hoover`, `duncan` | dif | `sim`, `dif` |
+| `lee` | - | dist | `dist`, `sim`, `dif` |
+| `mahalanobis` | - | dist | `dist`, `sim`, `dif` |
+| `manhattan` | `taxicab`, `cityblock` | dist | `dist`, `sim`, `dif` |
+| `minkowski` | - | dist | `dist`, `sim`, `dif` |
+| `pearson` | - | sim | `dist`, `sim` |
+| `tanimoto` | `binary_tanimoto`, `tanimoto_binary` | sim | `sim`, `dif` |
+| `tanimoto_continuous` | `continuous_tanimoto`, `extended_tanimoto` | sim | `sim`, `dif` |
 
 > **Hausdorff measures the worst-case nearest miss, and ignores order entirely.** For every point in A, `hausdorff` finds its nearest point in B and records that gap; the distance is the largest such gap, taken over both directions: `H(A,B) = max(h(A,B), h(B,A))` where `h(A,B) = maxₐ minᵦ d(a,b)`. Equivalently, the smallest radius by which you'd have to fatten each set to engulf the other. Inputs need not be the same length and are not compared index by index (like `energy` and `welch_t`). Both directions are required - a lone point inside a large cloud is ~0 away from the cloud but far from it coming back. `directed_hausdorff(a, b, ...)` exposes one direction, and `explain_hausdorff` prints both.
 >
@@ -372,31 +376,31 @@ Most vector metrics require numeric input for mathematical operations.
 
 If mathematical operations are not required, any data type is allowed.
 
-| Canonical Name | Aliases | Default Output |
-|---|---|---|
-| `hamming` | - | dist |
+| Canonical Name | Aliases | Default Output | Available Outputs |
+|---|---|---|---|
+| `hamming` | - | dist | `dist`, `sim`, `dif` |
 
 ### Probabilistic / Divergence Metrics
 
 These metrics measure how much two probability distributions differ.
 
-| Canonical Name | Aliases | Default Output |
-|---|---|---|
-| `bhattacharyya` | - | dist |
-| `hellinger` | - | dist |
-| `js_divergence` | `jensen_shannon` | dist |
-| `kl_divergence` | `kullback_leibler` | dist |
-| `wasserstein` | `earth_mover`, `emd` | dist |
+| Canonical Name | Aliases | Default Output | Available Outputs |
+|---|---|---|---|
+| `bhattacharyya` | - | dist | `dist`, `sim` |
+| `hellinger` | - | dist | `dist`, `sim` |
+| `js_divergence` | `jensen_shannon` | dist | `dist`, `sim`, `dif` |
+| `kl_divergence` | `kullback_leibler` | dist | `dist`, `sim`, `dif` |
+| `wasserstein` | `earth_mover`, `emd` | dist | `dist` |
 
 ### Two-Sample Statistics
 
-These compare two **independent numeric samples** - how far apart they are, whether in central tendency (`welch_t`, `cohens_d`) or across the whole distribution (`energy`). Unlike the vector metrics, the inputs are *not* aligned and *need not be the same length*; order is irrelevant and duplicate values are significant (they are samples, not sets). `welch_t` and `cohens_d` each need at least 2 values (they estimate variance); `energy` needs at least 1. All return an unbounded `dist` (higher = more different) with a `sim = 1/(1+dist)` companion.
+These compare two **independent numeric samples** - how far apart they are, whether in central tendency (`welch_t`, `cohens_d`) or across the whole distribution (`energy`). Unlike the vector metrics, the inputs are *not* aligned and *need not be the same length*; order is irrelevant and duplicate values are significant (they are samples, not sets). `welch_t` and `cohens_d` each need at least 2 values (they estimate variance); `energy` needs at least 1. All three return an unbounded `dist` (higher = more different), so by default `sim = 1/(1+dist)` and `dif = 1 - sim`; pass `d_max` to rescale linearly against a bound you supply (`dif = dist/d_max`, `sim = 1 - dif`).
 
-| Canonical Name | Aliases | Default Output |
-|---|---|---|
-| `welch_t` | `welch`, `two_sample_t`, `sed` | dist |
-| `cohens_d` | `cohen_d`, `cohens` | dist |
-| `energy` | `energy_distance`, `e_distance` | dist |
+| Canonical Name | Aliases | Default Output | Available Outputs |
+|---|---|---|---|
+| `welch_t` | `welch`, `two_sample_t`, `sed` | dist | `dist`, `sim`, `dif` |
+| `cohens_d` | `cohen_d`, `cohens` | dist | `dist`, `sim`, `dif` |
+| `energy` | `energy_distance`, `e_distance` | dist | `dist`, `sim`, `dif` |
 
 `welch_t` is the two-sample t-statistic - the mean difference divided by the standard error of the difference (`sqrt(s_A²/n_A + s_B²/n_B)`). `cohens_d` is the standardized effect size - the mean difference divided by the pooled standard deviation. (The standard error alone measures the *precision* of the difference, not its size; both metrics divide the mean difference by a spread term to measure the difference itself.)
 
@@ -406,11 +410,11 @@ These compare two **independent numeric samples** - how far apart they are, whet
 
 These compare **two clusterings of the same objects**, given as equal-length label sequences aligned by object index (object *i* has label `A[i]` and `B[i]`). They are **label-invariant** - relabelling the clusters does not change the score - because they count agreements over object *pairs* rather than matching labels. Each reduces the 2×2 pair-agreement table (`a` = a pair together in both, `b`/`c` = together in only one, `d` = apart in both) to a single similarity, and the three are the pair-counting form of existing coefficients (`rand_index` = `smc`, `fowlkes_mallows` = `cosine_set`, on pairs).
 
-| Canonical Name | Aliases | Default Output |
-|---|---|---|
-| `rand_index` | `rand` | sim |
-| `adjusted_rand` | `ari`, `adjusted_rand_index` | sim |
-| `fowlkes_mallows` | `fm`, `fowlkes_mallows_index` | sim |
+| Canonical Name | Aliases | Default Output | Available Outputs |
+|---|---|---|---|
+| `rand_index` | `rand` | sim | `sim`, `dif` |
+| `adjusted_rand` | `ari`, `adjusted_rand_index` | sim | `sim` |
+| `fowlkes_mallows` | `fm`, `fowlkes_mallows_index` | sim | `sim`, `dif` |
 
 `rand_index` = `(a+d)/total` (fraction of pairs agreed on). `adjusted_rand` corrects that for chance and is the one to prefer - it can go **negative** (worse than random), so its `sim` is not bounded to [0,1]. `fowlkes_mallows` = `a/sqrt((a+b)(a+c))`. `explain_` prints the full `a/b/c/d` table.
 
@@ -425,9 +429,11 @@ Many metrics can return more than one type of output. The table below shows what
 | `sim` | Similarity - higher is more similar (typically 0–1) |
 | `dif` | Difference - higher is more different (typically 0–1) |
 | `dist` | Distance - higher means further apart (range varies by metric) |
-| `score` | Raw alignment score (Smith-Waterman, Needleman-Wunsch, Affine Gap, LCS, Prefix, Suffix) |
-| `matrix` | Full dynamic programming matrix (Levenshtein, NW, SW, Affine Gap, LCS) |
-| `trace` | Recovered structure from the DP matrix: the alignment path (NW, SW, Affine Gap) or the longest common subsequence itself (LCS) |
+| `score` | Raw alignment or match score, in the metric's own units rather than normalized |
+| `matrix` | Full dynamic programming matrix |
+| `trace` | Recovered structure from the DP matrix: the alignment path, or the longest common subsequence itself |
+
+Which metrics offer which is in the **Available Outputs** column of the [Metrics Reference](#metrics-reference) tables - `score` on 9 metrics, `matrix` on 9, `trace` on 6, and `explain` / `info` on all 72.
 
 To request a specific output type:
 
