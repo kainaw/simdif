@@ -52,7 +52,12 @@ metric here that ignores order yet still measures *how far off* the mismatches
 are, and it needs neither equal lengths nor shared elements.
 
 Note: A true metric on compact sets -- it satisfies the triangle inequality and
-is 0 only for equal sets (dtw satisfies neither).
+is 0 only for equal sets (dtw satisfies neither). This holds at the default
+percentile=100, aggregate='max'. Trimming gives up the guarantee: HD95 can
+report 0 for sets that differ, since the offending points are the ones being
+discarded. That is the accepted trade for robustness, not a reason to avoid it
+-- just do not rely on the triangle inequality (for clustering, indexing, or
+metric-space arguments) once percentile < 100.
 
 WARNING -- the plain maximum is brutally outlier-sensitive. One stray point
 sets the whole score: [0,1,2] against [0.5,1.5] is 0.5, but adding a single

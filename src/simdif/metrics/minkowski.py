@@ -1,5 +1,6 @@
 import math
 import sys
+from .chebyshev import dist_chebyshev, explain_chebyshev
 from ..simdif import Metric, METRICS, to_list_numeric_aligned
 
 
@@ -17,11 +18,23 @@ Common values for p:
     p=1: Manhattan Distance
     p=2: Euclidean Distance
     p=inf: Chebyshev Distance
+
+Raising p weights the larger coordinate gaps more heavily. In the limit only
+the largest gap survives, which is why p=inf is the maximum rather than a sum.
+
+Note: p=inf is handled as a limit, not by substituting infinity into the
+formula -- |Ai - Bi|^inf is inf above 1 and 0 below it, and inf^(1/inf) is
+1.0, so evaluating it literally returns 1.0 for almost any input.
+dist_minkowski(a, b, p=inf) delegates to dist_chebyshev instead.
     """.strip()
 
 
 def explain_minkowski(a, b, **kwargs) -> str:
     p = kwargs.get('p', 2)
+    if p == math.inf:
+        return ("p=inf is the Chebyshev distance, reached as a limit rather than\n"
+                "by evaluating the formula (see info_minkowski). Showing that instead:\n\n"
+                + explain_chebyshev(a, b, **kwargs))
     a, b = to_list_numeric_aligned(a, b, **kwargs)
     terms = [f"|{x} - {y}|^{p}" for x, y in zip(a, b)]
     values = [abs(x - y)**p for x, y in zip(a, b)]
@@ -48,6 +61,11 @@ Minkowski Distance: {result:.4f}
 @Metric
 def dist_minkowski(a, b, **kwargs) -> float:
     p = kwargs.get('p', 2)
+    # p=inf must be taken as a limit, not evaluated: |d|^inf is inf for any gap
+    # above 1 and 0 below it, and inf^(1/inf) collapses to 1.0 for almost every
+    # input. Hand off to the metric that limit actually defines.
+    if p == math.inf:
+        return dist_chebyshev(a, b, **kwargs)
     a, b = to_list_numeric_aligned(a, b, **kwargs)
     if 'scipy' in sys.modules:
         from scipy.spatial import distance

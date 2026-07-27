@@ -49,7 +49,12 @@ $$M_p(A, B) = \left(\sum_{i} |A_i - B_i|^p\right)^{1/p}$$
 - p = 2 → Euclidean distance
 - p → ∞ → Chebyshev distance
 
-**Constraint:** p is required - no default is provided.
+**Parameters:**
+- `p` - the norm order (default 2, i.e. Euclidean).
+
+**Note:** Raising p weights larger coordinate gaps more heavily; in the limit only the largest gap survives, which is why p → ∞ is a maximum rather than a sum.
+
+**Note:** `p=inf` is handled as a limit, not by substituting infinity into the formula. Evaluated literally, $|A_i - B_i|^\infty$ is ∞ above 1 and 0 below it and $\infty^{1/\infty}$ is 1.0, so the formula returns 1.0 for almost any input. `dist_minkowski(a, b, p=inf)` delegates to `dist_chebyshev`.
 
 ---
 
@@ -93,13 +98,27 @@ Alias for Manhattan distance. See `manhattan`.
 
 ## chebyshev
 
-The **Chebyshev Distance** (also called L∞ or Chessboard distance) is the maximum absolute difference across all dimensions. It is the limit of Minkowski distance as p → ∞.
+The **Chebyshev Distance** (also called L∞ or Chessboard distance) is the maximum absolute difference across all dimensions. Only the single worst-matching coordinate is read; every other dimension is discarded. It is the limit of Minkowski distance as p → ∞: raising p weights larger gaps more heavily, and in the limit the largest gap is the only one left.
 
 **Formula:**
 
 $$C(A, B) = \max_{i} |A_i - B_i|$$
 
-**Range:** [0, ∞)
+**Range (dist):** [0, ∞), where 0 means the vectors are identical.
+
+**Range (sim):** [0, 1] computed as 1 / (1 + C).
+
+**Note:** The chessboard name is literal - a king moves one square in any direction including diagonally, so the minimum number of king moves between two squares is the Chebyshev distance between their (file, rank) coordinates.
+
+**Note:** Aligned and index-by-index, like the rest of the Lp family. Unequal lengths raise `Vector length mismatch` unless a `pad_value` is supplied. Two empty vectors score 0.
+
+**Note:** A true metric - symmetric, zero only for identical vectors, and it satisfies the triangle inequality, being a genuine norm.
+
+**Note:** Extremely outlier-sensitive - one coordinate decides everything. `[0,0,0,0]` vs `[0,0,0,9]` and `[8,8,8,8]` vs `[8,8,8,17]` both score 9, and the other coordinates can move freely without changing the result until one overtakes the max. Use `manhattan` (all gaps count equally) or `euclidean` (larger gaps count more, smaller ones still count) when the other dimensions should have a say.
+
+**Note:** Unlike `hausdorff`, there is deliberately no `percentile` parameter to trim that outlier. Hausdorff trims a list of *nearest-neighbor* distances, where the trimmed form is published (HD95); Chebyshev reduces *aligned coordinate* gaps, where trimming has no published meaning and is no longer a metric - the 75th percentile of `[0,0,0,5]` vs `[0,0,0,0]` would report 0 for two vectors that differ.
+
+**Note:** Scale-sensitive, more so than the summing metrics - whichever dimension carries the largest units wins by default. Standardize columns that do not share a unit.
 
 **Aliases:** `chessboard`, `linf`
 
@@ -324,7 +343,7 @@ $$H(A, B) = \max\big(h(A, B),\; h(B, A)\big)$$
 
 **Note:** Order-blind - each point picks its nearest neighbor independently, with no monotone, consistent, or one-to-one requirement. Unlike `dtw` (which forces an order-preserving path and sums the costs), [1,2,3,4,5] and [5,4,3,2,1] are the same point set and score 0. Unlike `jaccard` and the other set metrics, near misses count: exact shared membership is not required.
 
-**Note:** A true metric on compact sets - satisfies the triangle inequality and is 0 only for equal sets. `dtw` satisfies neither.
+**Note:** A true metric on compact sets - satisfies the triangle inequality and is 0 only for equal sets. `dtw` satisfies neither. This holds at the default `percentile=100`, `aggregate='max'`; trimming gives up the guarantee, since HD95 can report 0 for sets that differ (the offending points are exactly the ones discarded). That is the accepted trade for robustness, but do not rely on the triangle inequality once `percentile < 100`.
 
 **Note:** Inputs are unordered and need not share a length; they are not compared index by index.
 
