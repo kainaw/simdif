@@ -301,6 +301,41 @@ $$ME(A, B) = \frac{1}{|A|} \sum_{a \in A} \max_{b \in B} \text{sim}(a, b)$$
 
 ---
 
+## hausdorff
+
+The **Hausdorff Distance** measures the worst-case nearest miss between two point sets: the largest distance from any point of one set to its closest point in the other, taken over both directions.
+
+**Formula:**
+
+$$h(A, B) = \max_{a \in A} \min_{b \in B} d(a, b)$$
+
+$$H(A, B) = \max\big(h(A, B),\; h(B, A)\big)$$
+
+**Range (dist):** [0, ∞), where 0 means the two sets contain the same points.
+
+**Range (sim):** [0, 1] computed as 1 / (1 + H).
+
+**Parameters:**
+- `percentile` — which order statistic of the per-point nearest distances to report, 0–100 (default 100 = the true maximum). 95 gives the HD95 used for segmentation boundaries. Nearest-rank convention, so no interpolation occurs.
+- `aggregate` — `'max'` (default) or `'mean'`. `percentile=100` with `'mean'` is the modified Hausdorff distance (Dubuisson & Jain, 1994).
+- `dist_fn` — pointwise distance between elements (default: absolute difference). Supplying one also lifts the numeric-input requirement, so tuples act as n-D points.
+
+**Note:** Both directions are required. A single point inside a large cloud is ~0 away from the cloud but far from it in the reverse direction; only the max of the two is symmetric.
+
+**Note:** Order-blind — each point picks its nearest neighbor independently, with no monotone, consistent, or one-to-one requirement. Unlike `dtw` (which forces an order-preserving path and sums the costs), [1,2,3,4,5] and [5,4,3,2,1] are the same point set and score 0. Unlike `jaccard` and the other set metrics, near misses count: exact shared membership is not required.
+
+**Note:** A true metric on compact sets — satisfies the triangle inequality and is 0 only for equal sets. `dtw` satisfies neither.
+
+**Note:** Inputs are unordered and need not share a length; they are not compared index by index.
+
+**Note:** Extremely outlier-sensitive at `percentile=100`. A single stray point sets the entire score. Use `percentile=95` or `aggregate='mean'` on noisy data.
+
+**Note:** An empty set has no nearest neighbors, so H(empty, non-empty) is infinity. Two empty sets score 0.
+
+**Aliases:** `hausdorff_distance`, `hd`
+
+---
+
 ## ncd
 
 The **Normalized Compression Distance** measures similarity by asking whether knowing A helps a compressor compress B. If two inputs share structure, compressing them together costs less than compressing them apart.

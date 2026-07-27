@@ -326,6 +326,7 @@ Most vector metrics require numeric input for mathematical operations.
 | `cosine` | - | sim |
 | `euclidean` | - | dist |
 | `geodesic` | `earth` | dist |
+| `hausdorff` | `hausdorff_distance`, `hd` | dist |
 | `index_of_dissimilarity` | `hoover`, `duncan` | dif |
 | `lee` | - | dist |
 | `mahalanobis` | - | dist |
@@ -334,6 +335,22 @@ Most vector metrics require numeric input for mathematical operations.
 | `pearson` | - | sim |
 | `tanimoto` | `binary_tanimoto`, `tanimoto_binary` | sim |
 | `tanimoto_continuous` | `continuous_tanimoto`, `extended_tanimoto` | sim |
+
+> **Hausdorff measures the worst-case nearest miss, and ignores order entirely.** For every point in A, `hausdorff` finds its nearest point in B and records that gap; the distance is the largest such gap, taken over both directions: `H(A,B) = max(h(A,B), h(B,A))` where `h(A,B) = maxₐ minᵦ d(a,b)`. Equivalently, the smallest radius by which you'd have to fatten each set to engulf the other. Inputs need not be the same length and are not compared index by index (like `energy` and `welch_t`). Both directions are required — a lone point inside a large cloud is ~0 away from the cloud but far from it coming back. `directed_hausdorff(a, b, ...)` exposes one direction, and `explain_hausdorff` prints both.
+>
+> Two contrasts make it worth its own file. Against `dtw`: both compare collections through a pointwise distance, but DTW forces a monotone order-preserving path and *sums* the costs, while Hausdorff lets every point choose its nearest neighbour independently and takes the *max*. So `[1,2,3,4,5]` and `[5,4,3,2,1]` are the same point set — Hausdorff `0`, DTW `12`. Against `jaccard`: both ignore order, but the set metrics need exact shared members, so `sim_jaccard([1,2,3], [1.01,2.01,3.01])` is `0.0` while Hausdorff reports `0.01`. It is simdif's only order-blind metric where near misses still count. It is also a true metric (triangle inequality, zero iff equal) where DTW is not. Pass `dist_fn=` for a different pointwise distance — supplying one also lifts the numeric requirement, so tuples work as n-D points.
+>
+> ⚠️ **The plain maximum is brutally outlier-sensitive — use `percentile`.** `[0,1,2]` vs `[0.5,1.5]` is `0.5`; add one far-off point to B and it becomes `98`. `percentile` (default `100`, the true Hausdorff) reports a lower order statistic instead, and running the same pair twice shows exactly how much one point was carrying:
+>
+> ```python
+> A = list(range(20))
+> B = [i + 0.2 for i in range(19)] + [500]      # tracks A at 0.2, plus one wild point
+>
+> simdif(A, B, ['hausdorff'])                    # {'hausdorff': 481.0}
+> simdif(A, B, ['hausdorff'], percentile=95)     # {'hausdorff': 0.2}    <- HD95
+> ```
+>
+> `percentile=95` is the HD95 reported alongside Dice for segmentation boundaries. `aggregate='mean'` gives the modified Hausdorff (Dubuisson & Jain, 1994) used in shape matching; it composes with `percentile` rather than overriding it. Percentiles use the nearest-rank convention, so `percentile=100` is exactly the maximum and no value is ever interpolated into existence — this can differ slightly from NumPy's default.
 
 > **Tanimoto: binary vs continuous.** `tanimoto` is the binary/bit-vector coefficient `c / (a + b - c)` on aligned 0/1 vectors (or integer bitmasks with `binary=True`) - algebraically the *same* coefficient as `jaccard`, `c/(a+b-c) = |A∩B|/|A∪B|`, just computed positionally on bit vectors rather than on sets of element values. (So `jaccard` of the raw lists is not the same call - it compares value-sets - but the two coincide on the sets of "on" positions.) `tanimoto_continuous` is the real-valued generalization `A·B / (‖A‖² + ‖B‖² − A·B)` for count or weighted vectors, and it reduces exactly to the binary form on 0/1 input. Unlike `cosine`, Tanimoto is not scale-invariant.
 
