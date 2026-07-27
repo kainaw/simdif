@@ -1,5 +1,5 @@
 import math
-from ..simdif import Metric, METRICS, to_list_numeric
+from ..simdif import Metric, METRICS, to_list_numeric_aligned
 from ._helpers import _bounded_dif
 
 
@@ -43,6 +43,19 @@ Parameters:
     unit   : if it begins with 'D'/'d' (e.g. "degrees"), A and B are treated
              as degrees and converted to radians internally. Otherwise
              (default) they are assumed to already be in radians.
+    pad_value : how to fill the shorter angle list when A and B name points on
+             manifolds of different dimension. Without it, unequal lengths
+             raise 'Vector length mismatch' (same contract as hamming).
+
+Note on pad_value: the length of an angle list is the dimension of the
+manifold, so padding lifts the shorter point onto the larger sphere.
+pad_value=0 is the natural choice and is exactly isometric: appending a zero
+angle inserts a zero Cartesian coordinate, embedding the point on a subsphere
+without moving it, so a [lat, lon] pair padded to three angles keeps every
+distance it had. Any other pad_value tilts the point off that subsphere
+(pad_value=pi/2 moves it ~17 degrees), which is a legitimate thing to ask for
+but is a choice you are making, not a lift. pad_value is read in the same
+unit as A and B -- padding happens before the degrees-to-radians conversion.
     """.strip()
 
 
@@ -92,9 +105,7 @@ def _central_angle(v1, v2):
 def explain_geodesic(a, b, **kwargs) -> str:
     radius = kwargs.get('radius', 1.0)
     unit = kwargs.get('unit', 'radians')
-    v1, v2 = to_list_numeric(a), to_list_numeric(b)
-    if len(v1) != len(v2):
-        return "Error: Vector length mismatch"
+    v1, v2 = to_list_numeric_aligned(a, b, **kwargs)
     v1, v2 = _to_radians(v1, unit), _to_radians(v2, unit)
 
     u1, u2 = _to_cartesian(v1), _to_cartesian(v2)
@@ -129,9 +140,7 @@ def dist_geodesic(a, b, **kwargs) -> float:
         return 0.0
     radius = kwargs.get('radius', 1.0)
     unit = kwargs.get('unit', 'radians')
-    v1, v2 = to_list_numeric(a), to_list_numeric(b)
-    if len(v1) != len(v2):
-        raise ValueError(f"Vector length mismatch: {len(v1)} vs {len(v2)}")
+    v1, v2 = to_list_numeric_aligned(a, b, **kwargs)
     v1, v2 = _to_radians(v1, unit), _to_radians(v2, unit)
     return radius * _central_angle(v1, v2)
 
@@ -196,10 +205,9 @@ def _validate_earth_pair(v1, v2):
 
 
 def explain_earth(a, b, **kwargs) -> str:
-    v1, v2 = to_list_numeric(a), to_list_numeric(b)
-    if len(v1) != len(v2):
-        return "Error: Vector length mismatch"
-    _validate_earth_pair(v1, v2)
+    # Align first, then validate: pad_value can legitimately lift a 1-angle
+    # input to a [lat, lon] pair, but nothing can make a 3-angle input one.
+    _validate_earth_pair(*to_list_numeric_aligned(a, b, **kwargs))
     kwargs.setdefault('radius', EARTH_RADIUS_KM)
     kwargs.setdefault('unit', 'degrees')
     return explain_geodesic(a, b, **kwargs)
@@ -207,10 +215,7 @@ def explain_earth(a, b, **kwargs) -> str:
 
 @Metric
 def dist_earth(a, b, **kwargs) -> float:
-    v1, v2 = to_list_numeric(a), to_list_numeric(b)
-    if len(v1) != len(v2):
-        raise ValueError(f"Vector length mismatch: {len(v1)} vs {len(v2)}")
-    _validate_earth_pair(v1, v2)
+    _validate_earth_pair(*to_list_numeric_aligned(a, b, **kwargs))
     kwargs.setdefault('radius', EARTH_RADIUS_KM)
     kwargs.setdefault('unit', 'degrees')
     return dist_geodesic(a, b, **kwargs)
