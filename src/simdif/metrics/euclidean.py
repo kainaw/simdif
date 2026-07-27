@@ -33,8 +33,6 @@ so every pair beyond d_max scores identically. explain_ reports the clamp.
 
 def explain_euclidean(a, b, **kwargs) -> str:
     a, b = to_list_numeric_aligned(a, b, **kwargs)
-    if len(a) != len(b):
-        raise ValueException("Error: Vector length mismatch")
     steps = []
     sum_sq = 0.0
     for i, (x, y) in enumerate(zip(a, b)):
