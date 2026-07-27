@@ -1,5 +1,6 @@
 import math
 from ..simdif import Metric, METRICS, to_list, to_list_numeric
+from ._helpers import _sim_from_dist, _dif_from_dist, _max_line
 
 
 def info_hausdorff() -> str:
@@ -30,11 +31,23 @@ of thickness r would swallow B, and vice versa.
 
 Roles:
     dist - H(A,B) (>= 0, unbounded)
-    sim  - 1 / (1 + H)
-    dif  - 1 - sim
+    sim  - 1 / (1 + H), or 1 - dif when d_max is supplied
+    dif  - 1 - sim,     or H / d_max when d_max is supplied
 
 Range (dist): [0, inf)
     0 = the two sets contain the same points
+
+Note: H is a distance in the units of the underlying point space, which is
+unbounded, so sim defaults to the 1/(1+H) squash. d_max has a natural reading
+here that it lacks elsewhere: it is a tolerance in those same units -- the
+distance at which two point sets count as completely unrelated. If your
+points live in a known region, the diameter of that region IS a real bound
+(e.g. points on a 256x256 image grid: d_max = sqrt(2)*255 ~ 360.6), which
+makes this one of the few unbounded metrics where d_max can be derived rather
+than declared.
+
+WARNING -- d_max must be a real bound. Distances above it clamp to dif=1.0,
+so every pair beyond d_max scores identically. explain_ reports the clamp.
 
 Note: BOTH directions are required. A single point sitting inside a large cloud
 has a directed distance of ~0 toward the cloud but a large one coming back, so
@@ -145,14 +158,13 @@ dist_hausdorff_distance = dist_hd = dist_hausdorff
 
 @Metric
 def sim_hausdorff(a, b, **kwargs) -> float:
-    distance = dist_hausdorff(a, b, **kwargs)
-    return 1.0 / (1.0 + distance)
+    return _sim_from_dist(dist_hausdorff(a, b, **kwargs), kwargs.get('d_max'))
 sim_hausdorff_distance = sim_hd = sim_hausdorff
 
 
 @Metric
 def dif_hausdorff(a, b, **kwargs) -> float:
-    return 1 - sim_hausdorff(a, b, **kwargs)
+    return _dif_from_dist(dist_hausdorff(a, b, **kwargs), kwargs.get('d_max'))
 dif_hausdorff_distance = dif_hd = dif_hausdorff
 
 
@@ -203,8 +215,8 @@ Direction B -> A:
 {describe(pb, pa, 'B', 'A')}
 
 Hausdorff = max(h(A,B), h(B,A)) = max({forward:.4f}, {backward:.4f}) = {result:.4f}
-Similarity 1/(1+H): {sim_hausdorff(a, b, percentile=percentile, aggregate=aggregate, dist_fn=dist_fn, **kwargs):.4f}
-Difference (dif): {dif_hausdorff(a, b, percentile=percentile, aggregate=aggregate, dist_fn=dist_fn, **kwargs):.4f}
+{_max_line(result, kwargs.get('d_max'),
+           unbounded_note="unbounded -- H is in the units of the point space (its diameter, if known, is a real bound)")}
     """.strip()
 explain_hausdorff_distance = explain_hd = explain_hausdorff
 

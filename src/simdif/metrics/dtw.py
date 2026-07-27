@@ -1,5 +1,6 @@
 import math
 from ..simdif import Metric, METRICS, to_list_numeric, _dp_matrix, _fill_dp_matrix
+from ._helpers import _sim_from_dist, _dif_from_dist, _max_line
 
 
 def info_dtw() -> str:
@@ -22,6 +23,21 @@ The `dist_fn(a, b)` keyword sets the pointwise distance used at each step
 
 Range: [0, inf)
     0 = identical sequences (under dist_fn)
+
+Roles:
+    dist: the warped alignment cost (>= 0, unbounded)
+    sim:  1 / (1 + d), or 1 - dif when d_max is supplied
+    dif:  1 - sim,     or d / d_max when d_max is supplied
+
+Note: the cost is a SUM over the warping path, so it grows with sequence
+length as well as with dissimilarity, and no maximum exists -- sim defaults
+to the 1/(1+d) squash. That length dependence is worth knowing before you
+pick a d_max: a bound that fits 50-point series will clamp every 500-point
+comparison to dif=1.0. If your sequences vary in length, either divide dist
+by the warping path length yourself first, or set d_max per length band.
+
+WARNING -- d_max must be a real bound. Costs above it clamp to dif=1.0, so
+every pair beyond d_max scores identically. explain_ reports the clamp.
     """.strip()
 
 
@@ -42,6 +58,8 @@ B: {to_list_numeric(b)}
 DTW Cost Matrix (rows = A, cols = B):
 {chr(10).join(rows_display)}
 DTW Distance: {dist_dtw(a, b, **kwargs):.4f}
+{_max_line(dist_dtw(a, b, **kwargs), kwargs.get('d_max'),
+           unbounded_note="unbounded -- the cost sums over the warping path, so it grows with length too")}
     """.strip()
 
 
@@ -55,12 +73,12 @@ def dist_dtw(a, b, dist_fn=None, **kwargs) -> float:
 
 @Metric
 def sim_dtw(a, b, **kwargs) -> float:
-    return 1.0 / (1.0 + dist_dtw(a, b, **kwargs))
+    return _sim_from_dist(dist_dtw(a, b, **kwargs), kwargs.get('d_max'))
 
 
 @Metric
 def dif_dtw(a, b, **kwargs) -> float:
-    return 1 - sim_dtw(a, b, **kwargs)
+    return _dif_from_dist(dist_dtw(a, b, **kwargs), kwargs.get('d_max'))
 
 
 def matrix_dtw(a, b, dist_fn=None, **kwargs):

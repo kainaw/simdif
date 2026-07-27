@@ -1,5 +1,6 @@
 import math
 from ..simdif import Metric, METRICS, to_list_numeric
+from ._helpers import _sim_from_dist, _dif_from_dist, _max_line
 
 
 def info_mahalanobis() -> str:
@@ -16,6 +17,22 @@ Formula:
     d = sqrt( (x - y)^T * S^-1 * (x - y) )
     Where S is the Covariance Matrix.
 
+Roles:
+    dist: the quadratic form above (>= 0, unbounded)
+    sim:  1 / (1 + d), or 1 - dif when d_max is supplied
+    dif:  1 - sim,     or d / d_max when d_max is supplied
+
+Note: no maximum exists, so sim defaults to the 1/(1+d) squash. Unlike the
+Minkowski family there is no bound to be had by range-normalizing the inputs
+either: the covariance matrix rescales the space, so the ceiling depends on
+S^-1 rather than on the coordinate ranges. If you need a linear dif, pick
+d_max from the chi-square distribution -- d^2 is chi-square with n degrees of
+freedom under normality, so sqrt of a high quantile is a defensible bound
+(e.g. n=2: sqrt(chi2.ppf(0.999, 2)) ~ 3.72).
+
+WARNING -- d_max must be a real bound. Distances above it clamp to dif=1.0,
+so every pair beyond d_max scores identically. explain_ reports the clamp.
+
 Note: In this implementation, the INVERSE covariance matrix (S^-1) is supplied
 via the 'covariance_inv' keyword argument. If it is not provided, S^-1 defaults
 to the Identity Matrix, rendering the result identical to Euclidean Distance.
@@ -31,6 +48,8 @@ A: {a}
 B: {b}
 Covariance Matrix: {has_cov}
 Mahalanobis Distance: {dist:.4f}
+{_max_line(dist, kwargs.get('d_max'),
+           unbounded_note="unbounded -- the ceiling depends on S^-1, not on the coordinate ranges")}
 (Note: If this matches Euclidean, check if you passed a custom covariance matrix.)
     """.strip()
 
@@ -60,14 +79,20 @@ def dist_mahalanobis(a, b, **kwargs) -> float:
 
 
 @Metric
+def dif_mahalanobis(a, b, **kwargs) -> float:
+    return _dif_from_dist(dist_mahalanobis(a, b, **kwargs), kwargs.get('d_max'))
+
+
+@Metric
 def sim_mahalanobis(a, b, **kwargs) -> float:
-    return 1.0 / (1.0 + dist_mahalanobis(a, b, **kwargs))
+    return _sim_from_dist(dist_mahalanobis(a, b, **kwargs), kwargs.get('d_max'))
 
 
 METRICS['mahalanobis'] = {
     'class': 'vector',
     'default': 'dist',
     'dist': dist_mahalanobis,
+    'dif': dif_mahalanobis,
     'sim': sim_mahalanobis,
     'info': info_mahalanobis,
     'explain': explain_mahalanobis,

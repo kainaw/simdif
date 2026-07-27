@@ -2,6 +2,7 @@ import math
 import sys
 from .chebyshev import dist_chebyshev, explain_chebyshev
 from ..simdif import Metric, METRICS, to_list_numeric_aligned
+from ._helpers import _sim_from_dist, _dif_from_dist, _max_line
 
 
 def info_minkowski() -> str:
@@ -21,6 +22,26 @@ Common values for p:
 
 Raising p weights the larger coordinate gaps more heavily. In the limit only
 the largest gap survives, which is why p=inf is the maximum rather than a sum.
+
+Roles:
+    dist: the Lp norm above (>= 0, unbounded)
+    sim:  1 / (1 + D), or 1 - dif when d_max is supplied
+    dif:  1 - sim,     or D / d_max when d_max is supplied
+
+Note: no maximum exists on R^n, so sim defaults to the 1/(1+D) squash. If
+your coordinates are range-normalized to [0,1], the bound is exact and
+depends on both n and p:
+
+    d_max = n^(1/p)      p=1: n      p=2: sqrt(n)      p=inf: 1
+
+That is the whole reason to range-normalize first: it converts "no bound
+exists" into a bound you can compute. Dividing Manhattan by n is Gower's
+coefficient; note that p=inf needs no n at all, because the largest single
+coordinate gap on [0,1]^n is 1 regardless of dimension.
+
+WARNING -- d_max must be a real bound. Anything above it clamps to dif=1.0,
+collapsing every distant pair onto the same score. explain_ says when a
+clamp happened.
 
 Note: p=inf is handled as a limit, not by substituting infinity into the
 formula -- |Ai - Bi|^inf is inf above 1 and 0 below it, and inf^(1/inf) is
@@ -55,6 +76,8 @@ Step 2: Take the p-th root of the sum:
   = {result:.4f}
 
 Minkowski Distance: {result:.4f}
+{_max_line(result, kwargs.get('d_max'),
+           unbounded_note=f"unbounded on R^n (on [0,1]^n it would be n^(1/{p}) = {len(a) ** (1 / p):.4f})")}
     """.strip()
 
 
@@ -74,14 +97,20 @@ def dist_minkowski(a, b, **kwargs) -> float:
 
 
 @Metric
+def dif_minkowski(a, b, **kwargs) -> float:
+    return _dif_from_dist(dist_minkowski(a, b, **kwargs), kwargs.get('d_max'))
+
+
+@Metric
 def sim_minkowski(a, b, **kwargs) -> float:
-    return 1.0 / (1.0 + dist_minkowski(a, b, **kwargs))
+    return _sim_from_dist(dist_minkowski(a, b, **kwargs), kwargs.get('d_max'))
 
 
 METRICS['minkowski'] = {
     'class': 'vector',
     'default': 'dist',
     'dist': dist_minkowski,
+    'dif': dif_minkowski,
     'sim': sim_minkowski,
     'info': info_minkowski,
 	'explain': explain_minkowski,

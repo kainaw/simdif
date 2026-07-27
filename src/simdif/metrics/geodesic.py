@@ -1,5 +1,6 @@
 import math
 from ..simdif import Metric, METRICS, to_list_numeric
+from ._helpers import _bounded_dif
 
 
 def info_geodesic() -> str:
@@ -18,6 +19,18 @@ Method:
     angle between the two vectors is recovered via the dot product, and the
     distance is radius * central_angle. The result is bounded by pi * radius
     (antipodal points).
+
+Roles:
+    dist: radius * central_angle
+    dif:  dist / (pi * radius)  -- equivalently central_angle / pi
+    sim:  1 - dif
+
+The maximum is known: the central angle cannot exceed pi, so no 1/(1+d)
+squash and no supplied bound are needed and sim + dif == 1. Note that dif
+cancels the radius entirely -- it is the fraction of the way around the
+manifold, so two cities on Earth and the same pair scaled to a globe give
+the identical dif. That is the property that makes dif comparable across
+manifolds where dist is not.
 
 Convention:
     The 2-angle case is the geographic one: the first angle is latitude
@@ -91,6 +104,8 @@ def explain_geodesic(a, b, **kwargs) -> str:
 
     u1s = "[" + ", ".join(f"{x:.4f}" for x in u1) + "]"
     u2s = "[" + ", ".join(f"{x:.4f}" for x in u2) + "]"
+    d_max = math.pi * radius
+    dif = _bounded_dif(dist, d_max)
     return f"""
 A: {v1} (radians)
 B: {v2} (radians)
@@ -102,7 +117,9 @@ Unit vector B: {u2s}
 Dot product (cos of central angle): {dot:.6f}
 Central angle: acos({dot:.6f}) = {angle:.6f} rad
 Geodesic Distance: {radius} * {angle:.6f} = {dist:.4f}
-Similarity (1 / (1 + d)): {1.0 / (1.0 + dist):.4f}
+Maximum: pi * {radius} = {d_max:.4f} (derived -- antipodal points)
+Difference (dist / max): {dist:.4f} / {d_max:.4f} = {dif:.4f}
+Similarity (1 - dif): {1.0 - dif:.4f}
     """.strip()
 
 
@@ -120,14 +137,21 @@ def dist_geodesic(a, b, **kwargs) -> float:
 
 
 @Metric
+def dif_geodesic(a, b, **kwargs) -> float:
+    radius = kwargs.get('radius', 1.0)
+    return _bounded_dif(dist_geodesic(a, b, **kwargs), math.pi * radius)
+
+
+@Metric
 def sim_geodesic(a, b, **kwargs) -> float:
-    return 1.0 / (1.0 + dist_geodesic(a, b, **kwargs))
+    return 1.0 - dif_geodesic(a, b, **kwargs)
 
 
 METRICS['geodesic'] = {
     'class': 'vector',
     'default': 'dist',
     'dist': dist_geodesic,
+    'dif': dif_geodesic,
     'sim': sim_geodesic,
     'info': info_geodesic,
     'explain': explain_geodesic,
@@ -151,6 +175,15 @@ coordinates are already in radians.
 Formula:
     Same as Geodesic Distance with A, B each of length 2. Latitude is the
     first (elevation) angle and longitude the second (azimuth) angle.
+
+Roles:
+    dist: great-circle distance in the same unit as the radius (km by default)
+    dif:  dist / (pi * radius) -- 1.0 means antipodal, 0.5 a quarter of the
+          globe away. With the default radius the ceiling is 20015.09 km.
+    sim:  1 - dif
+
+Because dif divides the radius back out, it is unit-free: the same two
+points score the same dif whether the radius is in km or miles.
     """.strip()
 
 
@@ -184,14 +217,21 @@ def dist_earth(a, b, **kwargs) -> float:
 
 
 @Metric
+def dif_earth(a, b, **kwargs) -> float:
+    radius = kwargs.get('radius', EARTH_RADIUS_KM)
+    return _bounded_dif(dist_earth(a, b, **kwargs), math.pi * radius)
+
+
+@Metric
 def sim_earth(a, b, **kwargs) -> float:
-    return 1.0 / (1.0 + dist_earth(a, b, **kwargs))
+    return 1.0 - dif_earth(a, b, **kwargs)
 
 
 METRICS['earth'] = {
     'class': 'vector',
     'default': 'dist',
     'dist': dist_earth,
+    'dif': dif_earth,
     'sim': sim_earth,
     'info': info_earth,
     'explain': explain_earth,

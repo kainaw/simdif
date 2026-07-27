@@ -1,5 +1,6 @@
 import math
 from ..simdif import Metric, METRICS, to_list_numeric
+from ._helpers import _sim_from_dist, _dif_from_dist, _max_line
 
 
 def _avg_pairwise(x, y):
@@ -34,10 +35,20 @@ Formula:
 
 Roles:
     dist - E(A, B) (>= 0, unbounded)
-    sim  - 1 / (1 + E)
+    sim  - 1 / (1 + E), or 1 - dif when d_max is supplied
+    dif  - 1 - sim,     or E / d_max when d_max is supplied
 
 Range (dist): [0, inf)
     0 = the two samples come from the same distribution
+
+Note: E is unbounded because it carries the units of the observations, so
+sim defaults to the 1/(1+E) squash. There is no distribution-free ceiling to
+divide by; if you need a linear dif, take d_max from the scale of your data
+(e.g. the range of the pooled sample), which makes it a declared convention
+rather than a derived bound.
+
+WARNING -- d_max must be a real bound. Values above it clamp to dif=1.0,
+so every pair beyond d_max scores identically. explain_ reports the clamp.
 
 Note: A and B are two INDEPENDENT samples - unordered, duplicates significant,
 unequal lengths OK, each with at least 1 value. Unlike Welch's t or Cohen's d
@@ -62,7 +73,8 @@ Average within-A distance mean||a-a'||: {within_a:.4f}
 Average within-B distance mean||b-b'||: {within_b:.4f}
 Energy statistic: 2*{cross:.4f} - {within_a:.4f} - {within_b:.4f} = {d2:.4f}
 Energy distance: sqrt({max(0.0, d2):.4f}) = {d:.4f}
-Similarity 1/(1+E): {1.0 / (1.0 + d):.4f}
+{_max_line(d, kwargs.get('d_max'),
+           unbounded_note="unbounded -- E carries the units of the observations")}
     """.strip()
 explain_energy_distance = explain_e_distance = explain_energy
 
@@ -75,8 +87,14 @@ dist_energy_distance = dist_e_distance = dist_energy
 
 
 @Metric
+def dif_energy(a, b, **kwargs) -> float:
+    return _dif_from_dist(dist_energy(a, b, **kwargs), kwargs.get('d_max'))
+dif_energy_distance = dif_e_distance = dif_energy
+
+
+@Metric
 def sim_energy(a, b, **kwargs) -> float:
-    return 1.0 / (1.0 + dist_energy(a, b, **kwargs))
+    return _sim_from_dist(dist_energy(a, b, **kwargs), kwargs.get('d_max'))
 sim_energy_distance = sim_e_distance = sim_energy
 
 
@@ -84,6 +102,7 @@ METRICS['energy'] = {
     'class': 'vector',
     'default': 'dist',
     'dist': dist_energy,
+    'dif': dif_energy,
     'sim': sim_energy,
     'info': info_energy,
     'explain': explain_energy,
