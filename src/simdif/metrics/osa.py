@@ -15,7 +15,7 @@ Example: "CA" → "ABC" results in 3 (not 2).
 Note: If the optional `rapidfuzz` package is installed, its `OSA` distance is
 used on strings for speed; otherwise a dynamic-programming matrix is filled
 locally. (rapidfuzz's `OSA` matches this implementation exactly; its
-`DamerauLevenshtein` is the *unrestricted* true DL — see damerau_levenshtein.)
+`DamerauLevenshtein` is the *unrestricted* true DL: see damerau_levenshtein.)
     """.strip()
 
 

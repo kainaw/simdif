@@ -14,7 +14,7 @@ $$H(A, B) = \sum_{i} \mathbf{1}[A_i \neq B_i]$$
 
 **Constraint:** Both sequences must be the same length.
 
-**Note:** Operates on ordered sequences, not sets — position and duplicates matter.
+**Note:** Operates on ordered sequences, not sets - position and duplicates matter.
 
 ---
 
@@ -49,7 +49,7 @@ $$M_p(A, B) = \left(\sum_{i} |A_i - B_i|^p\right)^{1/p}$$
 - p = 2 → Euclidean distance
 - p → ∞ → Chebyshev distance
 
-**Constraint:** p is required — no default is provided.
+**Constraint:** p is required - no default is provided.
 
 ---
 
@@ -173,7 +173,7 @@ The **Damerau-Levenshtein Distance** extends Levenshtein by adding transposition
 
 ## indel
 
-The **Indel Distance** is a restricted form of Levenshtein that only allows insertions and deletions — no substitutions. A substitution costs 2 (one delete + one insert).
+The **Indel Distance** is a restricted form of Levenshtein that only allows insertions and deletions - no substitutions. A substitution costs 2 (one delete + one insert).
 
 **Range:** [0, len(A) + len(B)]
 
@@ -189,7 +189,7 @@ The **Needleman-Wunsch Algorithm** performs global sequence alignment, finding t
 
 **Default parameters:** match=1, mismatch=-1, gap=-1
 
-**Note:** Returns a score, not a distance — higher values mean better alignment. Use `trace_needleman_wunsch` to retrieve the actual aligned sequences.
+**Note:** Returns a score, not a distance - higher values mean better alignment. Use `trace_needleman_wunsch` to retrieve the actual aligned sequences.
 
 **Aliases:** `needleman`, `wunsch`
 
@@ -231,7 +231,7 @@ The **Longest Common Subsequence** finds the length of the longest subsequence p
 
 ## lc_substring
 
-The **Longest Common Substring** finds the length of the longest run of elements present in both sequences *contiguously* — no skipping.
+The **Longest Common Substring** finds the length of the longest run of elements present in both sequences *contiguously* - no skipping.
 
 **Formula:** Computed via dynamic programming.
 
@@ -245,7 +245,7 @@ $$\text{LCSubstr}(A, B) = \max_{i, j} L(i, j)$$
 
 **Note:** Distinct from Longest Common Subsequence (`lcs`), which allows gaps. For "ABCDE" vs "AXBXCXDXE" the subsequence score is 5 and the substring score is 1.
 
-**Note:** A DP cell holds the length of the run *ending exactly* at that pair of positions, so the matrix is not monotone and the answer is the largest cell anywhere — not the bottom-right corner. This is the same clamp-to-zero trick that turns Needleman-Wunsch (global) into Smith-Waterman (local); `lc_substring` is `smith_waterman` with mismatch and gap penalties of -inf.
+**Note:** A DP cell holds the length of the run *ending exactly* at that pair of positions, so the matrix is not monotone and the answer is the largest cell anywhere - not the bottom-right corner. This is the same clamp-to-zero trick that turns Needleman-Wunsch (global) into Smith-Waterman (local); `lc_substring` is `smith_waterman` with mismatch and gap penalties of -inf.
 
 **Note:** No `dist` role is provided. len(A) + len(B) - 2 * score counts no sequence of edit operations here and is not a metric, unlike the indel distance that `lcs` exposes as its `dist`.
 
@@ -269,7 +269,7 @@ where $m$ is the number of matching characters and $t$ is the number of transpos
 
 ## jaro_winkler
 
-The **Jaro-Winkler Similarity** extends Jaro with a prefix bonus — sequences sharing a common prefix score higher.
+The **Jaro-Winkler Similarity** extends Jaro with a prefix bonus - sequences sharing a common prefix score higher.
 
 **Formula:**
 
@@ -297,7 +297,7 @@ $$ME(A, B) = \frac{1}{|A|} \sum_{a \in A} \max_{b \in B} \text{sim}(a, b)$$
 
 **Default inner metric:** `jaro_winkler`
 
-**Note:** Asymmetric — ME(A, B) ≠ ME(B, A) in general.
+**Note:** Asymmetric - ME(A, B) ≠ ME(B, A) in general.
 
 ---
 
@@ -316,15 +316,15 @@ $$H(A, B) = \max\big(h(A, B),\; h(B, A)\big)$$
 **Range (sim):** [0, 1] computed as 1 / (1 + H).
 
 **Parameters:**
-- `percentile` — which order statistic of the per-point nearest distances to report, 0–100 (default 100 = the true maximum). 95 gives the HD95 used for segmentation boundaries. Nearest-rank convention, so no interpolation occurs.
-- `aggregate` — `'max'` (default) or `'mean'`. `percentile=100` with `'mean'` is the modified Hausdorff distance (Dubuisson & Jain, 1994).
-- `dist_fn` — pointwise distance between elements (default: absolute difference). Supplying one also lifts the numeric-input requirement, so tuples act as n-D points.
+- `percentile` - which order statistic of the per-point nearest distances to report, 0–100 (default 100 = the true maximum). 95 gives the HD95 used for segmentation boundaries. Nearest-rank convention, so no interpolation occurs.
+- `aggregate` - `'max'` (default) or `'mean'`. `percentile=100` with `'mean'` is the modified Hausdorff distance (Dubuisson & Jain, 1994).
+- `dist_fn` - pointwise distance between elements (default: absolute difference). Supplying one also lifts the numeric-input requirement, so tuples act as n-D points.
 
 **Note:** Both directions are required. A single point inside a large cloud is ~0 away from the cloud but far from it in the reverse direction; only the max of the two is symmetric.
 
-**Note:** Order-blind — each point picks its nearest neighbor independently, with no monotone, consistent, or one-to-one requirement. Unlike `dtw` (which forces an order-preserving path and sums the costs), [1,2,3,4,5] and [5,4,3,2,1] are the same point set and score 0. Unlike `jaccard` and the other set metrics, near misses count: exact shared membership is not required.
+**Note:** Order-blind - each point picks its nearest neighbor independently, with no monotone, consistent, or one-to-one requirement. Unlike `dtw` (which forces an order-preserving path and sums the costs), [1,2,3,4,5] and [5,4,3,2,1] are the same point set and score 0. Unlike `jaccard` and the other set metrics, near misses count: exact shared membership is not required.
 
-**Note:** A true metric on compact sets — satisfies the triangle inequality and is 0 only for equal sets. `dtw` satisfies neither.
+**Note:** A true metric on compact sets - satisfies the triangle inequality and is 0 only for equal sets. `dtw` satisfies neither.
 
 **Note:** Inputs are unordered and need not share a length; they are not compared index by index.
 
@@ -346,15 +346,15 @@ $$NCD(A, B) = \frac{C(AB) - \min(C(A), C(B))}{\max(C(A), C(B))}$$
 
 where $C(x)$ is the byte length of $x$ after compression and $AB$ is the concatenation of the two inputs.
 
-**Range (dist):** [0, ~1.1] — the [0, 1] bound holds only for an ideal compressor; real ones exceed it slightly. `dist` is reported raw, and only `sim`/`dif` are clamped.
+**Range (dist):** [0, ~1.1] - the [0, 1] bound holds only for an ideal compressor; real ones exceed it slightly. `dist` is reported raw, and only `sim`/`dif` are clamped.
 
 **Parameter:** `compressor` is `'zlib'` (default), `'bz2'`, `'lzma'`, or any callable bytes → bytes.
 
-**Note:** Compares no elements. There is no alignment, no token overlap, and no vector arithmetic — the only metric here that requires zero knowledge of what the data is, so it applies unchanged to text, DNA, or binaries.
+**Note:** Compares no elements. There is no alignment, no token overlap, and no vector arithmetic - the only metric here that requires zero knowledge of what the data is, so it applies unchanged to text, DNA, or binaries.
 
 **Note:** Unreliable on short inputs. Compressor headers (~11 bytes for zlib, ~38 for bz2, ~60 for lzma) dominate the arithmetic below a few hundred bytes, so identical inputs do not score 0 and rankings can invert. Use documents, not words.
 
-**Note:** Asymmetric — C(AB) ≠ C(BA), so NCD(A, B) ≠ NCD(B, A) in general.
+**Note:** Asymmetric - C(AB) ≠ C(BA), so NCD(A, B) ≠ NCD(B, A) in general.
 
 **Reference:** Cilibrasi & Vitányi, "Clustering by Compression" (2005), a computable approximation of the Normalized Information Distance built on Kolmogorov complexity.
 

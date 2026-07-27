@@ -22,7 +22,7 @@ Range: [-1, 1]
     1  = perfect agreement in ordering
     0  = no association
    -1  = perfect disagreement in ordering
-Note: A pair can be tied in both A and B simultaneously — T_a and T_b are
+Note: A pair can be tied in both A and B simultaneously, T_a and T_b are
 counted independently. If scipy is available, scipy.stats.kendalltau is used.
     """.strip()
 info_tau_b = info_kendall_tau_b

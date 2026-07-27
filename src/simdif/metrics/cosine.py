@@ -17,8 +17,8 @@ Range: [-1, 1]
     1  = identical direction
     0  = orthogonal (no correlation)
    -1  = opposite direction
-Difference: [0, 2]  — normalized to [0, 1] for negative similarities
-Distance:   [0, 2]  — 1 - similarity (standard cosine distance)
+Difference: [0, 2], normalized to [0, 1] for negative similarities
+Distance:   [0, 2], 1 - similarity (standard cosine distance)
 Note: For binary/set data, use cosine_set instead, which is equivalent
 to the Ochiai coefficient.
     """.strip()

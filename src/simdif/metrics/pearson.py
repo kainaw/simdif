@@ -7,7 +7,7 @@ def info_pearson() -> str:
 Pearson Correlation Coefficient
 --------------------------------
 Measures the linear correlation between two numeric vectors. Equivalent to
-cosine similarity applied to mean-centered vectors — the mean of each vector
+cosine similarity applied to mean-centered vectors, the mean of each vector
 is subtracted before computing the angle between them. This makes it
 insensitive to shifts in scale or offset, unlike cosine similarity.
 Formula:
@@ -17,10 +17,10 @@ Range: [-1, 1]
     1  = perfect positive linear correlation
     0  = no linear correlation
    -1  = perfect negative linear correlation
-Distance: [0, 2] — 1 - similarity (standard correlation distance)
+Distance: [0, 2], 1 - similarity (standard correlation distance)
 Note: Requires at least 2 elements. Returns 0.0 if either vector has zero
 variance (all elements identical). Pearson is to cosine what mean-centering
-is to raw vectors — use cosine if you want magnitude-sensitive comparison,
+is to raw vectors. Use cosine if you want magnitude-sensitive comparison,
 Pearson if you want to compare shape/trend regardless of offset.
     """.strip()
 

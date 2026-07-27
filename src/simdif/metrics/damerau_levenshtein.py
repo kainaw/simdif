@@ -47,7 +47,7 @@ Damerau-Levenshtein Distance
 Counts the minimum number of single-character insertions, deletions,
 substitutions, and transpositions (swapping two adjacent characters) needed
 to transform one sequence into another. Unlike OSA (Optimal String Alignment),
-this is the true Damerau-Levenshtein algorithm — it allows a substring to be
+this is the true Damerau-Levenshtein algorithm. It allows a substring to be
 edited more than once and satisfies the triangle inequality.
 Formula:
     DL(A,B) = minimum edit operations using:

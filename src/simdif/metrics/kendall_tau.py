@@ -9,7 +9,7 @@ Kendall's Tau-a
 Measures the ordinal association between two sequences by comparing all
 possible pairs and counting how many are concordant (same relative order
 in both sequences) versus discordant (opposite order). Ties are ignored
-entirely — if either sequence has tied values, Tau-b is more appropriate
+entirely. If either sequence has tied values, Tau-b is more appropriate
 as it adjusts the denominator to account for them.
 Formula:
     τ_a(A,B) = (C - D) / (n*(n-1)/2)
@@ -83,7 +83,7 @@ def sim_kendall_tau(a, b, **kwargs) -> float:
                 concordant += 1
             elif a_dir * b_dir < 0:
                 discordant += 1
-            # if either is 0, it's a tie — we ignore it (Tau-b handles ties differently)
+            # if either is 0, it's a tie, we ignore it (Tau-b handles ties differently)
     total = n * (n - 1) // 2
     return (concordant - discordant) / total
 sim_kendall_tau_a = sim_kendall_tau

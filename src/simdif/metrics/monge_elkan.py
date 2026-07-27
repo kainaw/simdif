@@ -30,12 +30,12 @@ reduces the per-token best scores across all of A: "avg" (default), "sum",
 Range: depends on `method`'s role (typically [0, 1] for sim/dif, unbounded
 for dist)
 
-Note: This metric is asymmetric — ME(A, B) may differ from ME(B, A).
+Note: This metric is asymmetric. ME(A, B) may differ from ME(B, A).
 
 Note: `method` must expose the role being requested, or a ValueError is
 raised (e.g. `method="cosine"` has no `dist` role, so
 `dist_monge_elkan(a, b, method="cosine")` fails). Levenshtein exposes all
-three roles, so it always runs — but its `sim`/`dif` roles are just a
+three roles, so it always runs, but its `sim`/`dif` roles are just a
 normalized edit distance, not a true similarity, so `sim_monge_elkan` with
 an edit-distance-style `method` can produce misleading numbers.
 `dist_monge_elkan` is the natural fit for those methods.

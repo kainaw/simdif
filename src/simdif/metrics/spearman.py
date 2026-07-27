@@ -18,7 +18,7 @@ Range: [-1, 1]
     1  = perfect positive monotonic relationship
     0  = no monotonic relationship
    -1  = perfect negative monotonic relationship
-Distance: [0, 2] — 1 - similarity
+Distance: [0, 2], 1 - similarity
 Note: Requires at least 2 elements. Tied values are assigned their average
 rank. Use Pearson when you expect a linear relationship; use Spearman when
 you expect a monotonic but possibly non-linear one.

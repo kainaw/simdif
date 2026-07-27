@@ -6,7 +6,7 @@ def info_smith_waterman() -> str:
 Smith-Waterman (Local Alignment)
 --------------------------------
 A dynamic-programming algorithm that finds the optimal LOCAL alignment of two
-sequences — the highest-scoring pair of subsequences — rather than aligning
+sequences, the highest-scoring pair of subsequences, rather than aligning
 them end-to-end. Negative running scores are clamped to zero, so the alignment
 is free to start and stop anywhere.
 

@@ -7,7 +7,7 @@ Simple Matching Coefficient (SMC)
 ----------------------------------
 Measures similarity by counting both shared presences and shared absences
 relative to the total universe size. Unlike Jaccard, shared absences count
-as evidence of similarity — making it a symmetrical measure appropriate when
+as evidence of similarity, making it a symmetrical measure appropriate when
 the absence of an attribute is as meaningful as its presence.
 Formula:
     SMC(A,B) = (n11 + n00) / N

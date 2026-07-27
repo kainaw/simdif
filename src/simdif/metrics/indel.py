@@ -8,7 +8,7 @@ Indel Distance (Insertions & Deletions)
 ---------------------------------------
 Counts the minimum number of single-character insertions and deletions needed
 to transform one sequence into another. Unlike Levenshtein, substitution is
-NOT allowed — a changed character costs 2 (one delete + one insert).
+NOT allowed. A changed character costs 2 (one delete + one insert).
 
 It is directly related to the longest common subsequence (LCS):
     INDEL(A,B) = |A| + |B| - 2 * LCS(A, B)
