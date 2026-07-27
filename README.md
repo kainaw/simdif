@@ -278,6 +278,7 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | `lc_substring` | `lcstr`, `lcsubstr`, `longest_common_substring` | score |
 | `levenshtein` | - | dist |
 | `monge_elkan` | - | sim |
+| `ncd` | `normalized_compression_distance`, `compression`, `compression_distance` | dist |
 | `needleman_wunsch` | `needleman`, `wunsch` | score |
 | `osa` | - | dist |
 | `p_distance` | `p_dist` | dist |
@@ -289,6 +290,10 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | `suffix` | - | score |
 
 > **BM25 takes a corpus.** `bm25` scores a query A against a document B and is the one sequence metric that needs external context: an optional `corpus` keyword (a list of documents, each a list of terms) supplies the IDF and average document length - the same pattern as `n_universe` for the set metrics. Without it, A and B are used as a degenerate 2-document corpus. Tune `k1` (term-frequency saturation) and `b_norm` (length normalization; named to avoid clashing with the document argument B). Example: `simdif(query, doc, ['bm25'], corpus=[doc1, doc2, ...])`.
+
+> **NCD compares no elements at all.** `ncd` (Cilibrasi & Vitányi, *Clustering by Compression*, 2005) measures similarity by asking whether knowing A helps a compressor compress B: `NCD(A,B) = (C(AB) − min(C(A),C(B))) / max(C(A),C(B))`, where `C(x)` is the compressed byte length. There is no alignment, no token overlap, and no vector arithmetic — it is the only metric here that needs zero knowledge of what the data *is*, so the same call works on text, DNA, or raw binaries. Choose the compressor with `compressor=` (`'zlib'` default, `'bz2'`, `'lzma'`, or any `bytes -> bytes` callable); prefer `bz2`/`lzma` past zlib's 32 KB window, since zlib cannot see redundancy across a wider gap and will silently call two similar large files dissimilar. Asymmetric, like `monge_elkan`: `C(AB) ≠ C(BA)`.
+>
+> ⚠️ **NCD is unreliable on short inputs — the one metric here whose classroom-sized example lies to you.** Every compressor emits a fixed header (~11 bytes for zlib, ~38 for bz2, ~60 for lzma), so below a few hundred bytes the formula measures format overhead instead of shared information. Identical inputs do **not** score 0 (`dist_ncd("hello world", "hello world")` ≈ `0.105` under zlib), and rankings can invert outright: under `bz2`, `"hedge"` vs `"hog"` scores `0.075` while `"hello world"` against its own copy scores `0.0625` — two unrelated words looking nearly as close as a string to itself. `explain_ncd` prints a warning when either input is under 100 bytes. Give it real documents; for short strings use an edit-distance or token metric instead.
 
 > **Evolutionary distances** (`p_distance`, `jukes_cantor`, `kimura`) estimate how far two aligned sequences have diverged - a progression from raw observation to biological correction. `p_distance` is the observed proportion of differing sites (generic, `==` only). `jukes_cantor` corrects it for multiple substitutions under a k-state model (`k=4` for DNA by default; `k=20` for protein). `kimura` (K80) additionally splits transitions from transversions, so it needs a symbol partition via the `groups` keyword (defaults to DNA purines `{A,G}` / pyrimidines `{C,T}`, case-insensitive); sites with out-of-group symbols are skipped. Both corrected distances saturate to `inf` when sequences are too diverged to estimate, and both assume inputs are already aligned (pair them with `needleman_wunsch` / `smith_waterman`).
 

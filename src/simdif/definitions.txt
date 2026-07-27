@@ -301,6 +301,32 @@ $$ME(A, B) = \frac{1}{|A|} \sum_{a \in A} \max_{b \in B} \text{sim}(a, b)$$
 
 ---
 
+## ncd
+
+The **Normalized Compression Distance** measures similarity by asking whether knowing A helps a compressor compress B. If two inputs share structure, compressing them together costs less than compressing them apart.
+
+**Formula:**
+
+$$NCD(A, B) = \frac{C(AB) - \min(C(A), C(B))}{\max(C(A), C(B))}$$
+
+where $C(x)$ is the byte length of $x$ after compression and $AB$ is the concatenation of the two inputs.
+
+**Range (dist):** [0, ~1.1] — the [0, 1] bound holds only for an ideal compressor; real ones exceed it slightly. `dist` is reported raw, and only `sim`/`dif` are clamped.
+
+**Parameter:** `compressor` is `'zlib'` (default), `'bz2'`, `'lzma'`, or any callable bytes → bytes.
+
+**Note:** Compares no elements. There is no alignment, no token overlap, and no vector arithmetic — the only metric here that requires zero knowledge of what the data is, so it applies unchanged to text, DNA, or binaries.
+
+**Note:** Unreliable on short inputs. Compressor headers (~11 bytes for zlib, ~38 for bz2, ~60 for lzma) dominate the arithmetic below a few hundred bytes, so identical inputs do not score 0 and rankings can invert. Use documents, not words.
+
+**Note:** Asymmetric — C(AB) ≠ C(BA), so NCD(A, B) ≠ NCD(B, A) in general.
+
+**Reference:** Cilibrasi & Vitányi, "Clustering by Compression" (2005), a computable approximation of the Normalized Information Distance built on Kolmogorov complexity.
+
+**Aliases:** `normalized_compression_distance`, `compression`, `compression_distance`
+
+---
+
 ## bray_curtis
 
 The **Bray-Curtis Dissimilarity** measures the compositional dissimilarity between two samples, commonly used in ecology for abundance data.
