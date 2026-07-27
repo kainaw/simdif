@@ -246,7 +246,7 @@ Metrics marked with an alias share their implementation with the canonical name.
 
 These metrics treat inputs as unordered collections. Element frequency is ignored; only membership matters.
 
-| Canonical Name | Aliases | Default Output | Available Outputs |
+| Canonical Name | Aliases | Default | Available Outputs |
 |---|---|---|---|
 | `baroni_urbani_buser` | `bub`, `baroni_urbani` | sim | `sim`, `dif` |
 | `braun_blanquet` | - | sim | `sim`, `dif` |
@@ -275,7 +275,7 @@ These metrics treat inputs as unordered collections. Element frequency is ignore
 
 These metrics treat inputs as ordered. The position of elements matters (e.g. `"abc" ≠ "bca"`).
 
-| Canonical Name | Aliases | Default Output | Available Outputs |
+| Canonical Name | Aliases | Default | Available Outputs |
 |---|---|---|---|
 | `affine_gap` | `gotoh` | score | `score`, `matrix`, `trace` |
 | `bm25` | `okapi`, `okapi_bm25` | score | `score` |
@@ -332,7 +332,7 @@ These metrics require input to be ordered and same length.
 
 Most vector metrics require numeric input for mathematical operations.
 
-| Canonical Name | Aliases | Default Output | Available Outputs |
+| Canonical Name | Aliases | Default | Available Outputs |
 |---|---|---|---|
 | `bray_curtis` | - | dist | `dist`, `sim` |
 | `canberra` | - | dist | `dist`, `sim`, `dif` |
@@ -376,7 +376,7 @@ Most vector metrics require numeric input for mathematical operations.
 
 If mathematical operations are not required, any data type is allowed.
 
-| Canonical Name | Aliases | Default Output | Available Outputs |
+| Canonical Name | Aliases | Default | Available Outputs |
 |---|---|---|---|
 | `hamming` | - | dist | `dist`, `sim`, `dif` |
 
@@ -384,7 +384,7 @@ If mathematical operations are not required, any data type is allowed.
 
 These metrics measure how much two probability distributions differ.
 
-| Canonical Name | Aliases | Default Output | Available Outputs |
+| Canonical Name | Aliases | Default | Available Outputs |
 |---|---|---|---|
 | `bhattacharyya` | - | dist | `dist`, `sim` |
 | `hellinger` | - | dist | `dist`, `sim` |
@@ -396,7 +396,7 @@ These metrics measure how much two probability distributions differ.
 
 These compare two **independent numeric samples** - how far apart they are, whether in central tendency (`welch_t`, `cohens_d`) or across the whole distribution (`energy`). Unlike the vector metrics, the inputs are *not* aligned and *need not be the same length*; order is irrelevant and duplicate values are significant (they are samples, not sets). `welch_t` and `cohens_d` each need at least 2 values (they estimate variance); `energy` needs at least 1. All three return an unbounded `dist` (higher = more different), so by default `sim = 1/(1+dist)` and `dif = 1 - sim`; pass `d_max` to rescale linearly against a bound you supply (`dif = dist/d_max`, `sim = 1 - dif`).
 
-| Canonical Name | Aliases | Default Output | Available Outputs |
+| Canonical Name | Aliases | Default | Available Outputs |
 |---|---|---|---|
 | `welch_t` | `welch`, `two_sample_t`, `sed` | dist | `dist`, `sim`, `dif` |
 | `cohens_d` | `cohen_d`, `cohens` | dist | `dist`, `sim`, `dif` |
@@ -410,7 +410,7 @@ These compare two **independent numeric samples** - how far apart they are, whet
 
 These compare **two clusterings of the same objects**, given as equal-length label sequences aligned by object index (object *i* has label `A[i]` and `B[i]`). They are **label-invariant** - relabelling the clusters does not change the score - because they count agreements over object *pairs* rather than matching labels. Each reduces the 2×2 pair-agreement table (`a` = a pair together in both, `b`/`c` = together in only one, `d` = apart in both) to a single similarity, and the three are the pair-counting form of existing coefficients (`rand_index` = `smc`, `fowlkes_mallows` = `cosine_set`, on pairs).
 
-| Canonical Name | Aliases | Default Output | Available Outputs |
+| Canonical Name | Aliases | Default | Available Outputs |
 |---|---|---|---|
 | `rand_index` | `rand` | sim | `sim`, `dif` |
 | `adjusted_rand` | `ari`, `adjusted_rand_index` | sim | `sim` |
