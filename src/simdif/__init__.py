@@ -4,11 +4,18 @@ Supports sequence alignment, set logic, and vector-space metrics.
 """
 
 import sys
+from importlib.metadata import version as _version, PackageNotFoundError as _PackageNotFoundError
 
 from .simdif import *
 from .metrics import *
 
-__version__ = "0.1.4"
+try:
+    __version__ = _version("simdif")
+except _PackageNotFoundError:
+    # Not installed -- e.g. running straight from a source checkout with no
+    # `pip install -e .`. pyproject.toml remains the single source of truth;
+    # nothing here needs updating when the version changes.
+    __version__ = "0.0.0+unknown"
 __author__ = "C. Shaun Wagner"
 
 def available_metrics():
