@@ -8,7 +8,7 @@ import sys
 from .simdif import *
 from .metrics import *
 
-__version__ = "0.1.0"
+__version__ = "0.1.4"
 __author__ = "C. Shaun Wagner"
 
 def available_metrics():
