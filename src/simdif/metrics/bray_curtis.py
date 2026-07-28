@@ -1,4 +1,6 @@
+import sys
 from ..simdif import Metric, METRICS, to_list_numeric_aligned
+from ._helpers import _lib_note
 
 
 def info_bray_curtis() -> str:
@@ -33,22 +35,29 @@ def explain_bray_curtis(a, b, **kwargs) -> str:
     numerator = sum(diffs)
     denominator = sum(sums)
     score = numerator / denominator if denominator != 0 else 0.0
+    live = dist_bray_curtis(a, b, **kwargs)
+    lib_name = 'scipy' if 'scipy' in sys.modules else None
     return f"""
 A: {a}
 B: {b}
 Absolute Differences (|Ai - Bi|): {diffs} -> Sum: {numerator}
 Absolute Totals (|Ai + Bi|): {sums} -> Sum: {denominator}
-Bray-Curtis Dissimilarity: {numerator} / {denominator} = {score:.4f}
-Similarity (1 - d): {1.0 - score:.4f}
+Bray-Curtis Dissimilarity: {numerator} / {denominator} = {score:.4f}{_lib_note(score, live, lib_name, 'dist_bray_curtis')}
+Similarity (1 - d): {1.0 - live:.4f}
     """.strip()
 
 
 @Metric
 def dist_bray_curtis(a, b, **kwargs) -> float:
     a, b = to_list_numeric_aligned(a, b, **kwargs)
-    diff_sum = sum(abs(x - y) for x, y in zip(a, b))
     total_sum = sum(abs(x + y) for x, y in zip(a, b))
-    return diff_sum / total_sum if total_sum != 0 else 0.0
+    if total_sum == 0:
+        return 0.0  # avoid scipy's 0/0 -> nan on two all-zero vectors
+    if 'scipy' in sys.modules:
+        from scipy.spatial import distance
+        return float(distance.braycurtis(a, b))
+    diff_sum = sum(abs(x - y) for x, y in zip(a, b))
+    return diff_sum / total_sum
 
 
 @Metric

@@ -5,6 +5,7 @@ METRICS or is re-exported by metrics/__init__.py (every name starts with '_').
 Each helper lives here only because more than one metric file needs it; helpers
 used by a single metric stay in that metric's own module.
 """
+import math
 from ..simdif import to_list, to_list_aligned
 
 
@@ -149,6 +150,31 @@ def _pair_table(a, b, c, d):
   b  together in A only = {b}   (disagreement)
   c  together in B only = {c}   (disagreement)
   d  apart in both      = {d}   (agreement)"""
+
+
+# --- Reporting optimized-library drift (explain_) ------------------------------
+#
+# Metrics with an "optimized library fallback" branch (see module docstrings
+# for `if 'scipy' in sys.modules: ...`) compute the same quantity two ways: a
+# hand-written reference, shown step-by-step in explain_, and -- when the
+# caller already imported the library -- a call into scipy/rapidfuzz/etc. The
+# two can disagree in the last few digits (different summation order, a
+# different algorithm variant), and a caller who only ever calls dist_x never
+# notices, because explain_x showed the reference derivation while dist_x
+# quietly returned the optimized number. _lib_note makes that gap visible
+# instead of silent.
+
+def _lib_note(reference, optimized, lib_name, func_name):
+    """Explain_ line reporting a mismatch between the reference value shown
+    above it and what func_name actually returns via the optimized library.
+
+    Empty string when they agree (the common case) or lib_name is None (the
+    library isn't in play for this call, e.g. it isn't installed).
+    """
+    if lib_name is None or math.isclose(optimized, reference, rel_tol=1e-9, abs_tol=1e-9):
+        return ""
+    return (f"\nNote: {lib_name} is installed and {func_name} returns "
+            f"{optimized:.6g} here, not the {reference:.6g} shown above.")
 
 
 # --- Evolutionary distances (p_distance, jukes_cantor) ------------------------

@@ -66,18 +66,21 @@ def sim_pearson(a, b, **_) -> float:
         raise ValueError(f"Vector length mismatch: {len(a)} vs {len(b)}")
     if len(a) < 2:
         raise ValueError(f"Pearson requires at least 2 elements, got {len(a)}")
+    n = len(a)
+    mean_a = sum(a) / n
+    mean_b = sum(b) / n
+    denom_a = sum((x - mean_a) ** 2 for x in a) ** 0.5
+    denom_b = sum((y - mean_b) ** 2 for y in b) ** 0.5
+    if denom_a == 0 or denom_b == 0:
+        # scipy's pearsonr returns nan here (undefined correlation with a
+        # constant input); checked before the library gate so both paths
+        # agree on the same 0.0 convention.
+        return 0.0
     if 'scipy' in sys.modules:
         from scipy.stats import pearsonr
         result = pearsonr(a, b)
         return float(result[0])
-    n = len(a)
-    mean_a = sum(a) / n
-    mean_b = sum(b) / n
     numerator = sum((x - mean_a) * (y - mean_b) for x, y in zip(a, b))
-    denom_a = sum((x - mean_a) ** 2 for x in a) ** 0.5
-    denom_b = sum((y - mean_b) ** 2 for y in b) ** 0.5
-    if denom_a == 0 or denom_b == 0:
-        return 0.0
     return max(-1.0, min(1.0, numerator / (denom_a * denom_b)))
 
 

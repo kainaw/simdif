@@ -1,4 +1,5 @@
 from ..simdif import Metric, METRICS, to_list
+from ._helpers import _lib_note
 import sys
 
 
@@ -82,6 +83,8 @@ One sequence is empty -> Jaro Similarity: {sim:.4f}
     sim = (matches / len1 + matches / len2 + (matches - t) / matches) / 3 if matches else 0.0
     matched_a = " ".join(str(s1[i]) if s1_matches[i] else "_" for i in range(len1))
     matched_b = " ".join(str(s2[j]) if s2_matches[j] else "_" for j in range(len2))
+    live = sim_jaro(a, b, **kwargs)
+    lib_name = 'rapidfuzz' if isinstance(a, str) and isinstance(b, str) and 'rapidfuzz' in sys.modules else None
 
     return f"""
 A: ({", ".join(f"'{x}'" for x in s1)})
@@ -97,7 +100,7 @@ m (matches): {matches}
 t (transpositions): {out_of_order} out-of-order // 2 = {t}
 sim = 1/3 * (m/|A| + m/|B| + (m - t)/m)
     = 1/3 * ({matches}/{len1} + {matches}/{len2} + ({matches} - {t})/{matches})
-    = {sim:.4f}
+    = {sim:.4f}{_lib_note(sim, live, lib_name, 'sim_jaro')}
     """.strip()
 
 

@@ -30,3 +30,9 @@ def test_explain_jaro_window():
     assert "#" in out
     # Empty-input branch stays graceful.
     assert "empty" in explain_jaro("", "abc")
+
+
+def test_jaro_optimized_lib(optimized_lib):
+    optimized_lib('rapidfuzz')
+    assert sim_jaro("MARTHA", "MARHTA") == pytest.approx(17 / 18)
+    assert "Note:" not in explain_jaro("MARTHA", "MARHTA")

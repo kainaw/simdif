@@ -1,5 +1,5 @@
 import pytest
-from simdif.metrics.canberra import dist_canberra, dif_canberra, sim_canberra
+from simdif.metrics.canberra import dist_canberra, dif_canberra, sim_canberra, explain_canberra
 from simdif import canberra, dist, simdif
 
 def test_canberra_basic():
@@ -33,3 +33,13 @@ def test_canberra_bound_is_tight():
 def test_canberra_sim_dif_complementary():
     for a, b in ([1, 2], [1, 6]), ([0, 5], [0, -5]), ([1, 1], [1, 1]), ([], []):
         assert sim_canberra(a, b) + dif_canberra(a, b) == pytest.approx(1.0)
+
+
+def test_canberra_optimized_lib(optimized_lib):
+    # scipy is opted in for just this test (see tests/conftest.py); every
+    # other test in the suite still runs the hand-written reference path.
+    optimized_lib('scipy')
+    assert dist_canberra([1, 2], [1, 6]) == pytest.approx(0.5)
+    # No drift between the reference derivation and dist_canberra's real
+    # (now scipy-backed) return value, so explain_ prints no discrepancy note.
+    assert "Note:" not in explain_canberra([1, 2], [1, 6])

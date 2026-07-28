@@ -44,3 +44,10 @@ def test_chebyshev_explain():
     # Empty input returned 0.0 from dist but crashed explain (max of empty seq).
     assert "Chebyshev Distance: 0.0000" in explain_chebyshev([], [])
     assert "only one dimension" in explain_chebyshev([1], [5])
+
+
+def test_chebyshev_optimized_lib(optimized_lib):
+    optimized_lib('scipy')
+    assert dist_chebyshev([1, 10, 3], [2, 3, 5]) == pytest.approx(7.0)
+    assert dist_chebyshev([], []) == pytest.approx(0.0)  # empty guard precedes the scipy call
+    assert "Note:" not in explain_chebyshev([1, 10, 3], [2, 3, 5])

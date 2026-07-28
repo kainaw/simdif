@@ -20,3 +20,11 @@ def test_pearson_basic():
     assert pearson([1, 2, 3, 4], [1, 3, 2, 4]) == pytest.approx(0.8)
     assert sim([1, 2, 3, 4], [1, 3, 2, 4], 'pearson') == pytest.approx(0.8)
     assert simdif([1, 2, 3, 4], [1, 3, 2, 4], ['pearson']) == {'pearson': pytest.approx(0.8)}
+
+
+def test_pearson_optimized_lib(optimized_lib):
+    optimized_lib('scipy')
+    assert sim_pearson([1, 2, 3, 4], [1, 3, 2, 4]) == pytest.approx(0.8)
+    # scipy's pearsonr returns nan on a constant input; the zero-variance
+    # check runs before the library gate so both paths agree on 0.0.
+    assert sim_pearson([5, 5, 5], [1, 2, 3]) == pytest.approx(0.0)

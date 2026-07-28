@@ -1,5 +1,5 @@
 import pytest
-from simdif.metrics.wasserstein import dist_wasserstein, sim_wasserstein, dif_wasserstein
+from simdif.metrics.wasserstein import dist_wasserstein, sim_wasserstein, dif_wasserstein, explain_wasserstein
 from simdif import wasserstein, dist, sim, dif, simdif
 
 def test_wasserstein():
@@ -45,3 +45,18 @@ def test_wasserstein_sim_dif():
     # Role dispatcher + convenience names.
     assert sim([1, 0], [0, 1], 'wasserstein') == pytest.approx(1 / (1 + 1.0))
     assert dif([1, 0], [0, 1], 'emd') == pytest.approx(1 - 1 / (1 + 1.0))
+
+
+def test_wasserstein_optimized_lib_scipy(optimized_lib):
+    # scipy's wasserstein_distance path only engages for p=1.
+    optimized_lib('scipy')
+    assert dist_wasserstein([0.5, 0.5, 0, 0], [0, 0, 0, 1]) == pytest.approx(2.5)
+    assert "Note:" not in explain_wasserstein([0.5, 0.5, 0, 0], [0, 0, 0, 1])
+
+
+def test_wasserstein_optimized_lib_ot(optimized_lib):
+    # ot (POT)'s wasserstein_1d path is used regardless of p.
+    optimized_lib('ot')
+    assert dist_wasserstein([0.5, 0.5, 0, 0], [0, 0, 0, 1]) == pytest.approx(2.5)
+    assert dist_wasserstein([0.5, 0.5, 0, 0], [0, 0, 0, 1], p=2) == pytest.approx(6.5 ** 0.5)
+    assert "Note:" not in explain_wasserstein([0.5, 0.5, 0, 0], [0, 0, 0, 1])

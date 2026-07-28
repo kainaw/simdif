@@ -1,5 +1,5 @@
 import pytest
-from simdif.metrics.bray_curtis import dist_bray_curtis, sim_bray_curtis
+from simdif.metrics.bray_curtis import dist_bray_curtis, sim_bray_curtis, explain_bray_curtis
 from simdif import bray_curtis, dist, simdif
 
 def test_bray_curtis():
@@ -15,3 +15,11 @@ def test_bray_curtis():
     assert simdif([1,2,3],[1,3,5],['bray_curtis']) == {'bray_curtis': pytest.approx(0.2)}
     with pytest.raises(ValueError, match="Vector length mismatch"):
         dist_bray_curtis([1, 2, 3], [1, 2], pad_value=None)
+
+
+def test_bray_curtis_optimized_lib(optimized_lib):
+    optimized_lib('scipy')
+    assert dist_bray_curtis([1, 2, 3], [1, 3, 5]) == pytest.approx(0.2)
+    # Guarded before the scipy call: scipy's own braycurtis is 0/0 -> nan here.
+    assert dist_bray_curtis([0, 0], [0, 0]) == 0.0
+    assert "Note:" not in explain_bray_curtis([1, 2, 3], [1, 3, 5])

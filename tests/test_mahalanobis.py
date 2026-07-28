@@ -1,5 +1,5 @@
 import pytest
-from simdif.metrics.mahalanobis import dist_mahalanobis, sim_mahalanobis
+from simdif.metrics.mahalanobis import dist_mahalanobis, sim_mahalanobis, explain_mahalanobis
 from simdif import mahalanobis, dist, simdif
 
 def test_mahalanobis_basic():
@@ -19,3 +19,13 @@ def test_mahalanobis_basic():
     assert mahalanobis([0, 3], [4, 0]) == pytest.approx(5.0)
     assert dist([0, 3], [4, 0], 'mahalanobis') == pytest.approx(5.0)
     assert simdif([0, 3], [4, 0], ['mahalanobis']) == {'mahalanobis': pytest.approx(5.0)}
+
+
+def test_mahalanobis_optimized_lib(optimized_lib):
+    optimized_lib('scipy')
+    # covariance_inv wires directly onto scipy's VI parameter.
+    assert dist_mahalanobis([0, 3], [4, 0], covariance_inv=[[0.25, 0], [0, 0.25]]) == pytest.approx(2.5)
+    # explain_mahalanobis calls dist_mahalanobis directly (no separate
+    # reference computation to drift from), so the two always agree.
+    assert "Mahalanobis Distance: 2.5000" in explain_mahalanobis(
+        [0, 3], [4, 0], covariance_inv=[[0.25, 0], [0, 0.25]])

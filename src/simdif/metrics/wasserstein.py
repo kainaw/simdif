@@ -1,7 +1,7 @@
 import sys
 from bisect import bisect_left
 from ..simdif import Metric, METRICS, to_distribution
-from ._helpers import _sim_from_dist, _dif_from_dist, _max_line
+from ._helpers import _sim_from_dist, _dif_from_dist, _max_line, _lib_note
 
 
 def info_wasserstein() -> str:
@@ -109,6 +109,13 @@ def explain_wasserstein(a, b, p=1, **kwargs) -> str:
             steps.append(f"  t in ({prev:.4f}, {t:.4f}]  width {width:.4f}: |bin {i_p} - bin {i_q}|^{p} = {abs(i_p - i_q) ** p}")
         prev = t
     d = _wasserstein(a, b, p)
+    live = dist_wasserstein(a, b, p, **kwargs)
+    if 'ot' in sys.modules:
+        lib_name = 'ot (POT)'
+    elif p == 1 and 'scipy' in sys.modules:
+        lib_name = 'scipy'
+    else:
+        lib_name = None
     return f"""
 P (A): {a}
 Q (B): {b}
@@ -116,8 +123,8 @@ CDF(P): {[round(v, 4) for v in cp]}
 CDF(Q): {[round(v, 4) for v in cq]}
 Quantile-space contributions (order p={p}):
 {chr(10).join(steps)}
-Wasserstein Distance W_{p}: {d:.4f}
-{_max_line(d, kwargs.get('d_max'),
+Wasserstein Distance W_{p}: {d:.4f}{_lib_note(d, live, lib_name, 'dist_wasserstein')}
+{_max_line(live, kwargs.get('d_max'),
            unbounded_note="unbounded -- W_p carries units of bin position")}
     """.strip()
 explain_earth_mover = explain_wasserstein

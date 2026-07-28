@@ -2,7 +2,7 @@ import math
 import sys
 from .chebyshev import dist_chebyshev, explain_chebyshev
 from ..simdif import Metric, METRICS, to_list_numeric_aligned
-from ._helpers import _sim_from_dist, _dif_from_dist, _max_line
+from ._helpers import _sim_from_dist, _dif_from_dist, _max_line, _lib_note
 
 
 def info_minkowski() -> str:
@@ -61,6 +61,8 @@ def explain_minkowski(a, b, **kwargs) -> str:
     values = [abs(x - y)**p for x, y in zip(a, b)]
     sum_powers = sum(values)
     result = sum_powers ** (1/p)
+    live = dist_minkowski(a, b, **kwargs)
+    lib_name = 'scipy' if 'scipy' in sys.modules else None
     return f"""
 A: {a}
 B: {b}
@@ -75,8 +77,8 @@ Step 2: Take the p-th root of the sum:
   ({sum_powers:.4f})^(1/{p})
   = {result:.4f}
 
-Minkowski Distance: {result:.4f}
-{_max_line(result, kwargs.get('d_max'),
+Minkowski Distance: {result:.4f}{_lib_note(result, live, lib_name, 'dist_minkowski')}
+{_max_line(live, kwargs.get('d_max'),
            unbounded_note=f"unbounded on R^n (on [0,1]^n it would be n^(1/{p}) = {len(a) ** (1 / p):.4f})")}
     """.strip()
 

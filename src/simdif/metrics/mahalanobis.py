@@ -1,4 +1,5 @@
 import math
+import sys
 from ..simdif import Metric, METRICS, to_list_numeric
 from ._helpers import _sim_from_dist, _dif_from_dist, _max_line
 
@@ -68,6 +69,10 @@ def dist_mahalanobis(a, b, **kwargs) -> float:
     s_inv = kwargs.get('covariance_inv')
     if s_inv is None:
         return math.sqrt(sum(d**2 for d in diff))
+    if 'scipy' in sys.modules:
+        import numpy as np
+        from scipy.spatial import distance
+        return float(distance.mahalanobis(a, b, np.asarray(s_inv)))
     size = len(a)
     result = 0.0
     for i in range(size):

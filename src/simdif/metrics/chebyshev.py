@@ -1,5 +1,6 @@
+import sys
 from ..simdif import Metric, METRICS, to_list_numeric_aligned
-from ._helpers import _sim_from_dist, _dif_from_dist, _max_line
+from ._helpers import _sim_from_dist, _dif_from_dist, _max_line, _lib_note
 
 
 def info_chebyshev() -> str:
@@ -122,14 +123,16 @@ Chebyshev Distance: 0.0000
     else:
         carrying = "\nThere is only one dimension, so it is trivially the max."
 
+    live = dist_chebyshev(a, b, **kwargs)
+    lib_name = 'scipy' if 'scipy' in sys.modules else None
     return f"""
 A: {a}
 B: {b}
 Absolute differences per coordinate (only the largest survives):
 {chr(10).join(lines)}
 {carrying}
-Chebyshev Distance: {max_diff:.4f}
-{_max_line(max_diff, d_max)}
+Chebyshev Distance: {max_diff:.4f}{_lib_note(max_diff, live, lib_name, 'dist_chebyshev')}
+{_max_line(live, d_max)}
     """.strip()
 explain_chessboard = explain_chebyshev
 explain_linf = explain_chebyshev
@@ -140,6 +143,9 @@ def dist_chebyshev(a, b, **kwargs) -> float:
     a, b = to_list_numeric_aligned(a, b, **kwargs)
     if not a:
         return 0.0   # two empty vectors are identical
+    if 'scipy' in sys.modules:
+        from scipy.spatial import distance
+        return float(distance.chebyshev(a, b))
     return float(max(abs(x - y) for x, y in zip(a, b)))
 dist_chessboard = dist_chebyshev
 dist_linf = dist_chebyshev

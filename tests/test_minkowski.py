@@ -1,5 +1,5 @@
 import pytest
-from simdif.metrics.minkowski import dist_minkowski, sim_minkowski
+from simdif.metrics.minkowski import dist_minkowski, sim_minkowski, explain_minkowski
 from simdif import minkowski, dist, simdif
 
 def test_minkowski_basic():
@@ -18,3 +18,10 @@ def test_minkowski_basic():
     assert minkowski([0, 3], [4, 0]) == pytest.approx(5.0)
     assert dist([0, 3], [4, 0], 'minkowski') == pytest.approx(5.0)
     assert simdif([0, 3], [4, 0], ['minkowski']) == {'minkowski': pytest.approx(5.0)}
+
+
+def test_minkowski_optimized_lib(optimized_lib):
+    optimized_lib('scipy')
+    # |1-2|^3 + |10-3|^3 + |3-5|^3 = 1 + 343 + 8 = 352
+    assert dist_minkowski([1, 10, 3], [2, 3, 5], p=3) == pytest.approx(352.0 ** (1 / 3))
+    assert "Note:" not in explain_minkowski([1, 10, 3], [2, 3, 5], p=3)

@@ -1,4 +1,5 @@
 from ..simdif import Metric, METRICS, to_list
+from ._helpers import _lib_note
 import sys
 
 
@@ -73,14 +74,16 @@ def explain_damerau_levenshtein(a, b, **_) -> str:
     for i, label in enumerate(labels):
         row = matrix[i + 1][1:]
         rows_display.append(f"  '{label}'  " + "  ".join(f"{v:3}" for v in row))
-    return f"""
+    live = dist_damerau_levenshtein(a, b)
+    lib_name = 'rapidfuzz' if isinstance(a, str) and isinstance(b, str) and 'rapidfuzz' in sys.modules else None
+    return (f"""
 A: ({", ".join(f"'{x}'" for x in s1)})
 B: ({", ".join(f"'{y}'" for y in s2)})
 Damerau-Levenshtein Distance (true, unrestricted):
 {header}
 """ + "\n".join(rows_display) + f"""
-Distance: {dist}
-    """.strip()
+Distance: {dist}{_lib_note(dist, live, lib_name, 'dist_damerau_levenshtein')}
+    """).strip()
 explain_dl = explain_damerau_levenshtein
 
 

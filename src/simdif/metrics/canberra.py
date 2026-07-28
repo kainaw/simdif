@@ -1,5 +1,6 @@
+import sys
 from ..simdif import Metric, METRICS, to_list_numeric_aligned
-from ._helpers import _bounded_dif
+from ._helpers import _bounded_dif, _lib_note
 
 
 def info_canberra() -> str:
@@ -50,15 +51,17 @@ def explain_canberra(a, b, **kwargs) -> str:
         terms.append(f"  idx {i}: |{x} - {y}| / (|{x}| + |{y}|) = {num} / {den} = {val:.4f}")
     terms_display = "\n".join(terms)
     n = len(a)
-    dif = _bounded_dif(total, n)
+    live = dist_canberra(a, b, **kwargs)
+    lib_name = 'scipy' if 'scipy' in sys.modules else None
+    dif = _bounded_dif(live, n)
     return f"""
 A: {a}
 B: {b}
 Canberra Contributions:
 {terms_display}
-Total Canberra Distance: {total:.4f}
+Total Canberra Distance: {total:.4f}{_lib_note(total, live, lib_name, 'dist_canberra')}
 Maximum: n = {n} (derived -- each of the {n} terms is at most 1)
-Difference (dist / n): {total:.4f} / {n} = {dif:.4f}
+Difference (dist / n): {live:.4f} / {n} = {dif:.4f}
 Similarity (1 - dif): {1.0 - dif:.4f}
     """.strip()
 
@@ -66,6 +69,9 @@ Similarity (1 - dif): {1.0 - dif:.4f}
 @Metric
 def dist_canberra(a, b, **kwargs) -> float:
     a, b = to_list_numeric_aligned(a, b, **kwargs)
+    if 'scipy' in sys.modules:
+        from scipy.spatial import distance
+        return float(distance.canberra(a, b))
     score = 0.0
     for x, y in zip(a, b):
         denominator = abs(x) + abs(y)
