@@ -494,6 +494,23 @@ This is especially useful for showing students that the "right" metric depends o
 
 ---
 
+## Composing New Metrics with Arithmetic
+
+Every `sim_*`, `dif_*`, `dist_*`, `score_*` function is a `Metric` object, not a plain function - it supports `+`, `-`, `*`, `/`, and unary `-`, so you can blend metrics into a new one instead of just comparing them side by side:
+
+```python
+from simdif import sim_jaccard, dist_hamming
+
+# Reward set overlap, penalize positional mismatches
+mysim = 2 * sim_jaccard - 0.5 * dist_hamming
+
+mysim(['a', 'b', 'c'], ['b', 'c', 'd'])
+```
+
+The result is itself a `Metric`, so it can be called directly like `mysim(a, b)`, combined further (`mysim + 1`, `-mysim`), or built out of a mix of registered metrics, plain numbers, and ordinary `callable(a, b, **kwargs)` functions. Any `**kwargs` passed to the composite are forwarded to every metric it's built from.
+
+---
+
 ## Known Limitations
 
 - **Not optimised for performance.** Pure Python implementations mean simdif is slow on large inputs. It is not a replacement for NumPy, SciPy, or specialised libraries like `rapidfuzz`.

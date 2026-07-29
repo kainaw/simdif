@@ -1,15 +1,16 @@
 """
-simdif - Similarity, Difference, Distance, and Score Metrics for Python
-=======================================================================
+simdif - Similarity, Difference (and Distance) Metrics
+====================================================================
 
-A unified library for computing similarity, difference, distance, alignment
-scores, and sequence traces across sets, vectors, strings, and sequences.
+A unified library for computing similarity, difference, distance,
+alignment scores, and sequence traces across sets, vectors, strings,
+and sequences.
 
 Supported metric categories:
-    sim_*   - Similarity metrics (e.g., Jaccard, Cosine, Dice)
-    dif_*   - Difference metrics (e.g., Levenshtein, Hamming)
-    dist_*  - Distance metrics (e.g., Euclidean, Manhattan)
-    score_* - Alignment scores (e.g., Needleman-Wunsch, Smith-Waterman)
+    sim_*   - Similarity metrics (Jaccard, Cosine, Dice...)
+    dif_*   - Difference metrics (Levenshtein, Hamming...)
+    dist_*  - Distance metrics (Euclidean, Manhattan...)
+    score_* - Alignment scores (Needleman-Wunsch, Smith-Waterman...)
     trace_* - Alignment tracebacks (aligned sequence pairs)
 
 Basic usage:
@@ -17,14 +18,13 @@ Basic usage:
     sim("night", "nacht", "jaro")
     dist([1, 2, 3], [4, 5, 6], "euclidean")
 
-Author: C. Shaun Wagner
+Author: C. Shaun Wagner <cs@kainaw.com>
 License: MIT
 """
 
 import math
 import numbers
 import sys
-import os
 from functools import wraps
 
 
@@ -35,7 +35,7 @@ from functools import wraps
 class Metric:
     """
     This allows you to build composite metrics like:
-    myfunc = 2*sim_jaccard - sim_cosine + 0.4 dist_hamming
+    myfunc = 2*sim_jaccard - sim_cosine + 0.4*dist_hamming
     """
     def __init__(self, func):
         self.func = func
@@ -66,6 +66,8 @@ class Metric:
     def __rtruediv__(self, other):
         other_fn = self._wrap_operand(other)
         return Metric(lambda *a, **k: other_fn(*a, **k) / self(*a, **k))
+    def __neg__(self):
+        return Metric(lambda *a, **k: -self(*a, **k))
 
 
 # ------------------------------------------------------------------
