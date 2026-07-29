@@ -254,7 +254,7 @@ These metrics treat inputs as unordered collections. Element frequency is ignore
 | `dice_sorensen` | `dice`, `sorensen`, `sorensen_dice` | sim | `sim`, `dif` |
 | `jaccard` | `iou` | sim | `sim`, `dif` |
 | `kulczynski` | `kulczynski_ii` | sim | `sim`, `dif` |
-| `kulczynski_i` | - | sim | `sim` |
+| `kulczynski_i` | - | score | `score`, `dist` |
 | `mcconnaughey` | - | sim | `sim`, `dif` |
 | `mountford` | - | sim | `sim`, `dif` |
 | `overlap` | `szymkiewicz_simpson`, `simpson` | sim | `sim`, `dif` |
@@ -272,6 +272,8 @@ These metrics treat inputs as unordered collections. Element frequency is ignore
 > **`[-1, 1]`-ranged similarities use `dif = -sim`, not `1 - sim`.** `mcconnaughey`, `phi`, `yule_q` (here), plus `pearson`, `cosine`, `kendall_tau`, `kendall_tau_b`, and `spearman` (below) all range over `[-1, 1]` rather than `[0, 1]`, so `1 - sim` would compress instead of mirroring the scale. Negating instead keeps the same bounds with the sign flipped: `1` = maximally dissimilar (disjoint sets / perfect negative correlation), `-1` = identical / perfect positive correlation. The vector and sequence metrics in that list also keep their standard `dist = 1 - sim` role (range `[0, 2]`) alongside `dif`, for callers that want a conventional distance instead.
 
 > **Mountford is unbounded and sample-size independent.** `mountford` is an ecological presence/absence index built to stay roughly constant as sampling effort changes - unlike `jaccard`/`dice_sorensen`, which shrink when more of the fauna goes unobserved. It ignores shared absences (no `n_universe`) and its `sim` is a raw value in `[0, inf)`: `0` for disjoint species lists, `+inf` for identical ones. The bounded companion is `dif = 1 / (1 + M)` (`1` = disjoint, `0` = identical). This implementation uses Mountford's standard closed-form approximation, not the transcendental exact form. Example: `simdif(site_a, site_b, ['mountford'], output='dif')`.
+>
+> **Kulczynski I is a score, not a similarity.** `kulczynski_i` is a raw ratio of counts, `a / (b + c)`, with no fixed maximum - unlike `mountford`, it isn't offered as `sim` at all. It's reported as `score` (`0` = no shared elements, `+inf` = identical sets), and its `dist` is the plain reciprocal `(b + c) / a` (`0` = identical, `+inf` = no shared elements). There is no `dif`, either: without knowing the largest score actually achievable for a given `A`/`B`, there's nothing to divide `dist` by to normalize it into `[0, 1]`. It's the only set metric here without a `sim`/`dif` pair.
 
 ### Sequence Metrics
 
@@ -435,7 +437,7 @@ Many metrics can return more than one type of output. The table below shows what
 | `matrix` | Full dynamic programming matrix |
 | `trace` | Recovered structure from the DP matrix: the alignment path, or the longest common subsequence itself |
 
-Which metrics offer which is in the **Available Outputs** column of the [Metrics Reference](#metrics-reference) tables - `score` on 9 metrics, `matrix` on 9, `trace` on 6, and `explain` / `info` on all 72.
+Which metrics offer which is in the **Available Outputs** column of the [Metrics Reference](#metrics-reference) tables - `score` on 10 metrics, `matrix` on 9, `trace` on 6, and `explain` / `info` on all 72.
 
 To request a specific output type:
 

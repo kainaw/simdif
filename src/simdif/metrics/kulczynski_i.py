@@ -3,8 +3,8 @@ from ..simdif import Metric, METRICS, _aleph_counts, to_set
 
 def info_kulczynski_i() -> str:
     return """
-Kulczynski Similarity Coefficient I (K1)
-----------------------------------------
+Kulczynski Score I (K1)
+------------------------
 The ratio of shared elements to non-shared elements. Counts matches (elements
 in both sets) against mismatches (elements in exactly one set). Shared absences
 are ignored, so no universe size is needed.
@@ -16,9 +16,16 @@ Formula:
 Range: [0, inf)
     inf = identical sets (no mismatches)
     0   = no shared elements
-Note: Unlike Jaccard, K1 is unbounded above, so it is reported as a raw
-similarity score. No difference (1 - sim) is provided because it would be
-meaningless on an unbounded scale.
+Note: K1 is a raw ratio of counts, not a coefficient calibrated to [0, 1] -
+unlike Jaccard, it has no fixed maximum, so it is reported as a 'score'
+rather than a 'sim'. Its distance is the plain reciprocal:
+    dist(A, B) = (b + c) / a
+Range: [0, inf)
+    0   = identical sets
+    inf = no shared elements
+There is no 'sim' or 'dif' role: without knowing the largest score actually
+possible for a given A/B, there is nothing to normalize dist against to get
+a [0, 1] difference (and 1 minus that, a similarity).
 Aliases: Kulczynski I
     """.strip()
 
@@ -31,9 +38,9 @@ def explain_kulczynski_i(a, b, **_) -> str:
     only_b = sorted(map(str, b_set - a_set))
     denom = n10 + n01
     if denom == 0:
-        sim = float('inf') if n11 > 0 else 0.0
+        score = float('inf') if n11 > 0 else 0.0
     else:
-        sim = n11 / denom
+        score = n11 / denom
     return f"""
 A: ({", ".join(sorted(map(str, a_set)))})
 B: ({", ".join(sorted(map(str, b_set)))})
@@ -45,12 +52,16 @@ Calculation:
   a / (b + c)
 = {n11} / ({n10} + {n01})
 = {n11} / {denom}
-= {sim}
+= {score}
+Distance (reciprocal of score):
+  (b + c) / a
+= {denom} / {n11}
+= {'inf' if n11 == 0 else denom / n11}
     """.strip()
 
 
 @Metric
-def sim_kulczynski_i(a, b, **_) -> float:
+def score_kulczynski_i(a, b, **_) -> float:
     n00, n01, n10, n11 = _aleph_counts(a, b)
     denom = n10 + n01
     if denom == 0:
@@ -58,10 +69,19 @@ def sim_kulczynski_i(a, b, **_) -> float:
     return n11 / denom
 
 
+@Metric
+def dist_kulczynski_i(a, b, **_) -> float:
+    n00, n01, n10, n11 = _aleph_counts(a, b)
+    if n11 == 0:
+        return float('inf')
+    return (n10 + n01) / n11
+
+
 METRICS['kulczynski_i'] = {
     'class': 'set',
-    'default': 'sim',
-    'sim': sim_kulczynski_i,
+    'default': 'score',
+    'score': score_kulczynski_i,
+    'dist': dist_kulczynski_i,
     'info': info_kulczynski_i,
     'explain': explain_kulczynski_i,
 }
