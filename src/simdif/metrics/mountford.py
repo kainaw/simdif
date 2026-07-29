@@ -18,15 +18,19 @@ Formula (closed-form approximation, Mountford 1962 / Krebs 1999):
     Rewritten in terms of the aleph counts this codebase uses
     (a = n11+n10, b = n11+n01, J = n11), this simplifies to:
         M(A, B) = 2*n11 / (n11 * (n10 + n01) + 2 * n10 * n01)
-Range: [0, inf), and not capped at 1:
-    0   = no shared species
+Range: [0, 1] for most datasets (0 = no shared species, 1 = the
+combined unique-species count n10+n01 is exactly 2, e.g. two
+one-species differences balancing out), with two structural edge
+cases that break that bound:
     2   = one sample is the other plus exactly one extra species
           (n10=1,n01=0 or n10=0,n01=1) - true for any overlap size
     inf = identical species lists (n10 = n01 = 0)
-Because M is unbounded above (and can exceed 1), a naive 1 - M
-dissimilarity would go negative. Mountford is instead returned as a
-raw 'sim'; the 'dif' companion is the bounded 1 / (1 + M) (1 =
-disjoint, 0 = identical), which stays valid across the whole range.
+Formally, M <= 1 whenever n10+n01 >= 2; it only exceeds 1 in the two
+narrow cases above, where the samples differ by close to nothing.
+Because M can therefore exceed 1, a naive 1 - M dissimilarity would
+go negative in those cases. Mountford is instead returned as a raw
+'sim'; the 'dif' companion is the bounded 1 / (1 + M) (1 = disjoint,
+0 = identical), which stays valid across the whole range.
 
 Note: Mountford's exact index is the root of a transcendental equation
     derived from Fisher's log-series; this implementation uses the standard
