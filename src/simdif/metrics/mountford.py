@@ -5,19 +5,28 @@ from ..simdif import Metric, METRICS, _aleph_counts, to_set
 def info_mountford() -> str:
     return """
 Mountford's Index of Similarity
--------------------------------
-An ecological similarity index for presence/absence data, designed to be
-(approximately) independent of sample size - unlike Jaccard or Sorensen,
-which shrink as more of the fauna goes unsampled. Higher means more similar.
+--------------------------------------------------------------------
+An ecological similarity index for presence/absence data, designed
+to be (approximately) independent of sample size - unlike Jaccard or
+Sorensen, which shrink as more of the fauna goes unsampled. Higher
+means more similar.
 
-Formula (closed-form approximation):
-    M(A, B) = 2*n11 / (n11 * (n10 + n01) + 2 * n10 * n01)
-    Where n11 = shared species, n10/n01 = species unique to A / to B.
-Range: [0, inf)
+Formula (closed-form approximation, Mountford 1962 / Krebs 1999):
+    M(A, B) = 2*J / (2*a*b - (a + b)*J)
+    Where a = |A|, b = |B| (total species counts of each sample -
+    NOT the unique-only counts), J = species common to both (n11).
+    Rewritten in terms of the aleph counts this codebase uses
+    (a = n11+n10, b = n11+n01, J = n11), this simplifies to:
+        M(A, B) = 2*n11 / (n11 * (n10 + n01) + 2 * n10 * n01)
+Range: [0, inf), and not capped at 1:
     0   = no shared species
+    2   = one sample is the other plus exactly one extra species
+          (n10=1,n01=0 or n10=0,n01=1) - true for any overlap size
     inf = identical species lists (n10 = n01 = 0)
-Because it is unbounded above, Mountford is returned as a raw 'sim'; the
-'dif' companion is the bounded 1 / (1 + M) (1 = disjoint, 0 = identical).
+Because M is unbounded above (and can exceed 1), a naive 1 - M
+dissimilarity would go negative. Mountford is instead returned as a
+raw 'sim'; the 'dif' companion is the bounded 1 / (1 + M) (1 =
+disjoint, 0 = identical), which stays valid across the whole range.
 
 Note: Mountford's exact index is the root of a transcendental equation
     derived from Fisher's log-series; this implementation uses the standard
