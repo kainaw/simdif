@@ -1,6 +1,6 @@
 import pytest
-from simdif.metrics.spearman import sim_spearman, dist_spearman
-from simdif import spearman, sim, simdif
+from simdif.metrics.spearman import sim_spearman, dist_spearman, dif_spearman
+from simdif import spearman, sim, dif, simdif
 
 def test_spearman():
     # Perfect positive monotonic relationship.
@@ -14,6 +14,8 @@ def test_spearman():
     assert sim_spearman([1, 2, 3], [1, 3, 2]) == pytest.approx(0.5)
     # sim + dist == 1.
     assert sim_spearman([1, 2, 3], [1, 3, 2]) + dist_spearman([1, 2, 3], [1, 3, 2]) == pytest.approx(1.0)
+    assert dif_spearman([1, 2, 3], [1, 3, 2]) == pytest.approx(-0.5)
+    assert dif([1, 2, 3], [1, 3, 2], "spearman") == pytest.approx(-0.5)
     # Error handling.
     with pytest.raises(ValueError, match="at least 2 elements"):
         sim_spearman([1], [1])

@@ -1,6 +1,6 @@
 import pytest
-from simdif.metrics.kendall_tau_b import sim_kendall_tau_b, dist_kendall_tau_b
-from simdif import kendall_tau_b, sim, simdif
+from simdif.metrics.kendall_tau_b import sim_kendall_tau_b, dist_kendall_tau_b, dif_kendall_tau_b
+from simdif import kendall_tau_b, sim, dif, simdif
 
 def test_kendall_tau_b():
     assert sim_kendall_tau_b([1, 2, 3, 4], [1, 2, 3, 4]) == pytest.approx(1.0)
@@ -14,6 +14,8 @@ def test_kendall_tau_b():
     s = sim_kendall_tau_b(a, b)
     d = dist_kendall_tau_b(a, b)
     assert s + d == pytest.approx(1.0)
+    assert dif_kendall_tau_b(a, b) == pytest.approx(-s)
+    assert dif(a, b, 'kendall_tau_b') == pytest.approx(-s)
     assert kendall_tau_b([1, 2, 3, 4], [1, 2, 3, 4]) == pytest.approx(1.0)
     assert sim([1, 2, 3, 4], [1, 2, 3, 4], 'kendall_tau_b') == pytest.approx(1.0)
     assert simdif([1, 2, 3, 4], [1, 2, 3, 4], ['kendall_tau_b','tau_b']) == {

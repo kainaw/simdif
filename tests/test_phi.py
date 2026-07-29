@@ -23,6 +23,5 @@ def test_phi():
     assert simdif([1,2,3],[1,3,5],['mcc'], n_universe=10) == {
         'mcc': pytest.approx(11/21)
     }
-    # sim-only metric: there is no difference role
-    with pytest.raises(ValueError):
-        dif([1,2,3],[1,3,5],'phi', n_universe=10)
+    # difference is -1 * similarity, preserving the signed range
+    assert dif([1,2,3],[1,3,5],'phi', n_universe=10) == pytest.approx(-11/21)

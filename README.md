@@ -255,19 +255,21 @@ These metrics treat inputs as unordered collections. Element frequency is ignore
 | `jaccard` | `iou` | sim | `sim`, `dif` |
 | `kulczynski` | `kulczynski_ii` | sim | `sim`, `dif` |
 | `kulczynski_i` | - | sim | `sim` |
-| `mcconnaughey` | - | sim | `sim` |
+| `mcconnaughey` | - | sim | `sim`, `dif` |
 | `mountford` | - | sim | `sim`, `dif` |
 | `overlap` | `szymkiewicz_simpson`, `simpson` | sim | `sim`, `dif` |
-| `phi` | `mcc`, `matthews` | sim | `sim` |
+| `phi` | `mcc`, `matthews` | sim | `sim`, `dif` |
 | `rogers_tanimoto` | `sokal_ii`, `sokal_michener_ii`, `sokal_sneath_ii` | sim | `sim`, `dif` |
 | `russel_rao` | `russell_rao`, `rr` | sim | `sim`, `dif` |
 | `smc` | `sokal_michener` | sim | `sim`, `dif` |
 | `sokal_sneath_i` | `ssi` | sim | `sim`, `dif` |
 | `sokal_sneath_iii` | `ssiii` | sim | `sim`, `dif` |
 | `tversky` | - | sim | `sim`, `dif` |
-| `yule_q` | - | sim | `sim` |
+| `yule_q` | - | sim | `sim`, `dif` |
 
 > **Universe-aware metrics.** `smc`, `rogers_tanimoto`, `phi`, `yule_q`, and `baroni_urbani_buser` use "shared absences" (elements in neither set), so they take an optional `n_universe` parameter giving the size of the total element space. Without it, shared absences count as 0, which makes the association measures (`phi`, `yule_q`) degenerate - always pass `n_universe` for those. `baroni_urbani_buser` reduces to Jaccard when `n_universe` is omitted, and credits shared absences through the geometric mean `sqrt(n11 * n00)` - the only set coefficient here that uses that term. Example: `simdif(a, b, ['phi', 'yule_q'], n_universe=26)`.
+
+> **`[-1, 1]`-ranged similarities use `dif = -sim`, not `1 - sim`.** `mcconnaughey`, `phi`, `yule_q` (here), plus `pearson`, `cosine`, `kendall_tau`, `kendall_tau_b`, and `spearman` (below) all range over `[-1, 1]` rather than `[0, 1]`, so `1 - sim` would compress instead of mirroring the scale. Negating instead keeps the same bounds with the sign flipped: `1` = maximally dissimilar (disjoint sets / perfect negative correlation), `-1` = identical / perfect positive correlation. The vector and sequence metrics in that list also keep their standard `dist = 1 - sim` role (range `[0, 2]`) alongside `dif`, for callers that want a conventional distance instead.
 
 > **Mountford is unbounded and sample-size independent.** `mountford` is an ecological presence/absence index built to stay roughly constant as sampling effort changes - unlike `jaccard`/`dice_sorensen`, which shrink when more of the fauna goes unobserved. It ignores shared absences (no `n_universe`) and its `sim` is a raw value in `[0, inf)`: `0` for disjoint species lists, `+inf` for identical ones. The bounded companion is `dif = 1 / (1 + M)` (`1` = disjoint, `0` = identical). This implementation uses Mountford's standard closed-form approximation, not the transcendental exact form. Example: `simdif(site_a, site_b, ['mountford'], output='dif')`.
 
@@ -285,8 +287,8 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | `jaro` | - | sim | `sim`, `dif` |
 | `jaro_winkler` | - | sim | `sim`, `dif` |
 | `jukes_cantor` | `jc`, `jc69` | dist | `dist`, `sim`, `dif` |
-| `kendall_tau` | `kendall_tau_a`, `tau_a` | sim | `dist`, `sim` |
-| `kendall_tau_b` | `tau_b` | sim | `dist`, `sim` |
+| `kendall_tau` | `kendall_tau_a`, `tau_a` | sim | `dist`, `sim`, `dif` |
+| `kendall_tau_b` | `tau_b` | sim | `dist`, `sim`, `dif` |
 | `kimura` | `k80`, `k2p` | dist | `dist`, `sim`, `dif` |
 | `lc_subsequence` | `lcs`, `lcsubseq`, `longest_common_subsequence` | score | `score`, `dist`, `sim`, `dif`, `matrix`, `trace` |
 | `lc_substring` | `lcstr`, `lcsubstr`, `longest_common_substring` | score | `score`, `sim`, `dif`, `matrix`, `trace` |
@@ -300,7 +302,7 @@ These metrics treat inputs as ordered. The position of elements matters (e.g. `"
 | `ratcliff_obershelp` | `gestalt`, `ro`, `ratcliff`, `obershelp` | sim | `sim`, `dif`, `trace` |
 | `smith_waterman` | `smith`, `waterman` | score | `score`, `matrix`, `trace` |
 | `soundex` | - | sim | `sim`, `dif` |
-| `spearman` | - | sim | `dist`, `sim` |
+| `spearman` | - | sim | `dist`, `sim`, `dif` |
 | `suffix` | - | score | `score`, `sim`, `dif` |
 
 > **BM25 takes a corpus.** `bm25` scores a query A against a document B and is the one sequence metric that needs external context: an optional `corpus` keyword (a list of documents, each a list of terms) supplies the IDF and average document length - the same pattern as `n_universe` for the set metrics. Without it, A and B are used as a degenerate 2-document corpus. Tune `k1` (term-frequency saturation) and `b_norm` (length normalization; named to avoid clashing with the document argument B). Example: `simdif(query, doc, ['bm25'], corpus=[doc1, doc2, ...])`.
@@ -337,7 +339,7 @@ Most vector metrics require numeric input for mathematical operations.
 | `bray_curtis` | - | dist | `dist`, `sim` |
 | `canberra` | - | dist | `dist`, `sim`, `dif` |
 | `chebyshev` | `chessboard`, `linf` | dist | `dist`, `sim`, `dif` |
-| `cosine` | - | sim | `dist`, `sim` |
+| `cosine` | - | sim | `dist`, `sim`, `dif` |
 | `earth` | - | dist | `dist`, `sim`, `dif` |
 | `euclidean` | - | dist | `dist`, `sim`, `dif` |
 | `geodesic` | - | dist | `dist`, `sim`, `dif` |
@@ -348,7 +350,7 @@ Most vector metrics require numeric input for mathematical operations.
 | `mahalanobis` | - | dist | `dist`, `sim`, `dif` |
 | `manhattan` | `taxicab`, `cityblock` | dist | `dist`, `sim`, `dif` |
 | `minkowski` | - | dist | `dist`, `sim`, `dif` |
-| `pearson` | - | sim | `dist`, `sim` |
+| `pearson` | - | sim | `dist`, `sim`, `dif` |
 | `tanimoto` | `binary_tanimoto`, `tanimoto_binary` | sim | `sim`, `dif` |
 | `tanimoto_continuous` | `continuous_tanimoto`, `extended_tanimoto` | sim | `sim`, `dif` |
 

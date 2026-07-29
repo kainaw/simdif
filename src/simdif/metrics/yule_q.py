@@ -17,9 +17,11 @@ Range: [-1, 1]
     1  = perfect positive association (b*c = 0)
     0  = independence
     -1 = perfect negative association (a*d = 0)
+Difference: -1 * similarity
 Note: Requires n_universe to define d. Without it, d = 0 and Q collapses to
 -1 whenever b*c > 0, which is meaningless - always pass n_universe. Because the
-range is [-1, 1], only a raw similarity is reported (no 1 - sim difference).
+range is [-1, 1], 1 - sim would not be meaningful; negating similarity instead
+preserves the signed range.
 Aliases: Yule Q
     """.strip()
 
@@ -49,6 +51,7 @@ Calculation:
 = ({n11}*{n00} - {n10}*{n01}) / ({n11}*{n00} + {n10}*{n01})
 = ({ad} - {bc}) / ({ad} + {bc})
 = {sim:.4f}
+Difference: -1 * sim = {-sim:.4f}
     """.strip()
 
 
@@ -62,10 +65,16 @@ def sim_yule_q(a, b, n_universe=None, **_) -> float:
     return (ad - bc) / (ad + bc)
 
 
+@Metric
+def dif_yule_q(a, b, n_universe=None, **_) -> float:
+    return -sim_yule_q(a, b, n_universe=n_universe)
+
+
 METRICS['yule_q'] = {
     'class': 'set',
     'default': 'sim',
     'sim': sim_yule_q,
+    'dif': dif_yule_q,
     'info': info_yule_q,
     'explain': explain_yule_q,
 }

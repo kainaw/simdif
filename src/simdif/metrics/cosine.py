@@ -17,8 +17,8 @@ Range: [-1, 1]
     1  = identical direction
     0  = orthogonal (no correlation)
    -1  = opposite direction
-Difference: [0, 2], normalized to [0, 1] for negative similarities
 Distance:   [0, 2], 1 - similarity (standard cosine distance)
+Difference: [-1, 1], -1 * similarity (preserves the signed range)
 Note: For binary/set data, use cosine_set instead, which is equivalent
 to the Ochiai coefficient.
     """.strip()
@@ -42,10 +42,9 @@ Calculation:
   dot(A,B) / (||A|| * ||B||)
 = {dot} / {norm_a * norm_b:.4f}
 = {sim:.4f}
+Distance: 1 - cos = {dist_cosine(a, b):.4f}
+Difference: -1 * cos = {dif_cosine(a, b):.4f}
     """.strip()
-# No Difference/Distance lines: cosine registers a 'sim' role only. Cosine
-# similarity runs [-1, 1], so 1 - sim is not a distance on signed vectors, and
-# monge_elkan's info documents method="cosine" as having no dist role.
 
 
 @Metric
@@ -71,11 +70,17 @@ def dist_cosine(a, b, **kwargs) -> float:
     return 1 - sim_cosine(a, b, **kwargs)
 
 
+@Metric
+def dif_cosine(a, b, **kwargs) -> float:
+    return -sim_cosine(a, b, **kwargs)
+
+
 METRICS['cosine'] = {
     'class': 'vector',
     'default': 'sim',
     'sim': sim_cosine,
     'dist': dist_cosine,
+    'dif': dif_cosine,
     'info': info_cosine,
     'explain': explain_cosine,
 }

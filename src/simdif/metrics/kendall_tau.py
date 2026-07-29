@@ -21,6 +21,8 @@ Range: [-1, 1]
     1  = perfect agreement in ordering
     0  = no association
    -1  = perfect disagreement in ordering
+Distance: [0, 2], 1 - similarity
+Difference: [-1, 1], -1 * similarity (preserves the signed range)
 Note: Tau-a cannot reach ±1 when ties are present. Use Tau-b for data
 with tied values.
     """.strip()
@@ -62,6 +64,7 @@ Calculation:
 = {concordant - discordant} / {total}
 = {sim:.4f}
 Distance: 1 - τ_a = {dist_kendall_tau(a, b, **kwargs):.4f}
+Difference: -1 * τ_a = {dif_kendall_tau(a, b, **kwargs):.4f}
     """.strip()
 explain_kendall_tau_a = explain_kendall_tau
 explain_tau_a = explain_kendall_tau
@@ -97,11 +100,19 @@ dist_kendall_tau_a = dist_kendall_tau
 dist_tau_a = dist_kendall_tau
 
 
+@Metric
+def dif_kendall_tau(a, b, **kwargs) -> float:
+    return -sim_kendall_tau(a, b, **kwargs)
+dif_kendall_tau_a = dif_kendall_tau
+dif_tau_a = dif_kendall_tau
+
+
 METRICS['kendall_tau'] = {
     'class': 'sequence',
     'default': 'sim',
     'sim': sim_kendall_tau,
     'dist': dist_kendall_tau,
+    'dif': dif_kendall_tau,
     'info': info_kendall_tau,
     'explain': explain_kendall_tau,
 }

@@ -17,6 +17,5 @@ def test_mcconnaughey():
     assert simdif([1,2,3],[1,3,5],['mcconnaughey']) == {
         'mcconnaughey': pytest.approx(1/3)
     }
-    # sim-only metric: there is no difference role
-    with pytest.raises(ValueError):
-        dif([1,2,3],[1,3,5],'mcconnaughey')
+    # difference is -1 * similarity, preserving the signed range
+    assert dif([1,2,3],[1,3,5],'mcconnaughey') == pytest.approx(-1/3)

@@ -18,6 +18,7 @@ Range: [-1, 1]
     0  = no linear correlation
    -1  = perfect negative linear correlation
 Distance: [0, 2], 1 - similarity (standard correlation distance)
+Difference: [-1, 1], -1 * similarity (preserves the signed range)
 Note: Requires at least 2 elements. Returns 0.0 if either vector has zero
 variance (all elements identical). Pearson is to cosine what mean-centering
 is to raw vectors. Use cosine if you want magnitude-sensitive comparison,
@@ -56,6 +57,7 @@ Calculation:
   {numerator:.4f} / {denom_a * denom_b:.4f}
 = {sim:.4f}
 Distance: 1 - r = {dist_pearson(a, b):.4f}
+Difference: -1 * r = {dif_pearson(a, b):.4f}
     """.strip()
 
 
@@ -89,11 +91,17 @@ def dist_pearson(a, b, **_) -> float:
     return 1 - sim_pearson(a, b)
 
 
+@Metric
+def dif_pearson(a, b, **_) -> float:
+    return -sim_pearson(a, b)
+
+
 METRICS['pearson'] = {
     'class': 'vector',
     'default': 'sim',
     'sim': sim_pearson,
     'dist': dist_pearson,
+    'dif': dif_pearson,
     'info': info_pearson,
     'explain': explain_pearson,
 }

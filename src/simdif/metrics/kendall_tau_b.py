@@ -22,6 +22,8 @@ Range: [-1, 1]
     1  = perfect agreement in ordering
     0  = no association
    -1  = perfect disagreement in ordering
+Distance: [0, 2], 1 - similarity
+Difference: [-1, 1], -1 * similarity (preserves the signed range)
 Note: A pair can be tied in both A and B simultaneously, T_a and T_b are
 counted independently. If scipy is available, scipy.stats.kendalltau is used.
     """.strip()
@@ -69,6 +71,7 @@ Calculation:
 = {concordant - discordant} / {denom:.4f}
 = {sim:.4f}
 Distance: 1 - τ_b = {dist_kendall_tau_b(a, b):.4f}
+Difference: -1 * τ_b = {dif_kendall_tau_b(a, b):.4f}
     """.strip()
 explain_tau_b = explain_kendall_tau_b
 
@@ -116,11 +119,18 @@ def dist_kendall_tau_b(a, b, **kwargs) -> float:
 dist_tau_b = dist_kendall_tau_b
 
 
+@Metric
+def dif_kendall_tau_b(a, b, **kwargs) -> float:
+    return -sim_kendall_tau_b(a, b, **kwargs)
+dif_tau_b = dif_kendall_tau_b
+
+
 METRICS['kendall_tau_b'] = {
     'class': 'sequence',
     'default': 'sim',
     'sim': sim_kendall_tau_b,
     'dist': dist_kendall_tau_b,
+    'dif': dif_kendall_tau_b,
     'info': info_kendall_tau_b,
     'explain': explain_kendall_tau_b,
 }

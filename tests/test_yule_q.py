@@ -17,6 +17,5 @@ def test_yule_q():
     assert simdif([1,2,3],[1,3,5],['yule_q'], n_universe=10) == {
         'yule_q': pytest.approx(11/13)
     }
-    # sim-only metric: there is no difference role
-    with pytest.raises(ValueError):
-        dif([1,2,3],[1,3,5],'yule_q', n_universe=10)
+    # difference is -1 * similarity, preserving the signed range
+    assert dif([1,2,3],[1,3,5],'yule_q', n_universe=10) == pytest.approx(-11/13)

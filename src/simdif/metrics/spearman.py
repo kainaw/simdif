@@ -19,6 +19,7 @@ Range: [-1, 1]
     0  = no monotonic relationship
    -1  = perfect negative monotonic relationship
 Distance: [0, 2], 1 - similarity
+Difference: [-1, 1], -1 * similarity (preserves the signed range)
 Note: Requires at least 2 elements. Tied values are assigned their average
 rank. Use Pearson when you expect a linear relationship; use Spearman when
 you expect a monotonic but possibly non-linear one.
@@ -43,6 +44,7 @@ Ranks of B: ({", ".join(map(str, ranks_b))})
 Pearson applied to ranks:
 = {sim:.4f}
 Distance: 1 - ρ = {dist_spearman(a, b):.4f}
+Difference: -1 * ρ = {dif_spearman(a, b):.4f}
     """.strip()
 
 
@@ -61,11 +63,17 @@ def dist_spearman(a, b, **_) -> float:
     return 1 - sim_spearman(a, b)
 
 
+@Metric
+def dif_spearman(a, b, **_) -> float:
+    return -sim_spearman(a, b)
+
+
 METRICS['spearman'] = {
     'class': 'sequence',
     'default': 'sim',
     'sim': sim_spearman,
     'dist': dist_spearman,
+    'dif': dif_spearman,
     'info': info_spearman,
     'explain': explain_spearman,
 }

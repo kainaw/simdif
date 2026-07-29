@@ -4,21 +4,22 @@ from ..simdif import Metric, METRICS, _aleph_counts, to_set
 def info_mcconnaughey() -> str:
     return """
 McConnaughey Similarity Coefficient
------------------------------------
-An association measure that rewards shared elements and penalizes the product
-of the two mismatch counts, normalized by the two set sizes. Shared absences
-are ignored, so no universe size is needed.
+--------------------------------------------------------------------
+An association measure that rewards shared elements and penalizes
+the product of the two mismatch counts, normalized by the two set
+sizes. Shared absences are ignored, so no universe size is needed.
 Formula:
     M(A, B) = (a^2 - b*c) / ((a + b) * (a + c))
         a = |A ∩ B|   (in both)
         b = |A only|  (in A, not B)
         c = |B only|  (in B, not A)
 Range: [-1, 1]
-    1  = identical sets
-    0  = balance point
+     1 = identical sets
+     0 = balance point
     -1 = disjoint sets
-Note: Because the range is [-1, 1], this is reported as a raw similarity only;
-1 - sim is not a meaningful difference here.
+Difference: -1 * similarity
+Note: Because the range is [-1, 1], 1 - sim would not be meaningful; negating
+similarity instead preserves the signed range (1 = disjoint, -1 = identical).
 Aliases: McConnaughey
     """.strip()
 
@@ -43,6 +44,7 @@ Calculation:
 = ({n11}^2 - {n10}*{n01}) / (({n11} + {n10}) * ({n11} + {n01}))
 = {n11 * n11 - n10 * n01} / {denom}
 = {sim:.4f}
+Difference: -1 * sim = {-sim:.4f}
     """.strip()
 
 
@@ -55,10 +57,16 @@ def sim_mcconnaughey(a, b, **_) -> float:
     return (n11 * n11 - n10 * n01) / denom
 
 
+@Metric
+def dif_mcconnaughey(a, b, **_) -> float:
+    return -sim_mcconnaughey(a, b)
+
+
 METRICS['mcconnaughey'] = {
     'class': 'set',
     'default': 'sim',
     'sim': sim_mcconnaughey,
+    'dif': dif_mcconnaughey,
     'info': info_mcconnaughey,
     'explain': explain_mcconnaughey,
 }

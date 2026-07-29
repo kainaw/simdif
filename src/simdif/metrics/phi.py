@@ -19,9 +19,11 @@ Range: [-1, 1]
     1  = perfect agreement
     0  = no correlation
     -1 = perfect disagreement
+Difference: -1 * similarity
 Note: Requires n_universe to define d. Without it, d = 0 and the coefficient is
 skewed strongly negative - always pass n_universe. Because the range is
-[-1, 1], only a raw similarity is reported (no 1 - sim difference).
+[-1, 1], 1 - sim would not be meaningful; negating similarity instead
+preserves the signed range.
 Aliases: MCC, Matthews Correlation Coefficient, Mean Square Contingency
     """.strip()
 info_mcc = info_phi
@@ -53,6 +55,7 @@ Calculation:
 = ({n11}*{n00} - {n10}*{n01}) / sqrt({n11 + n10} * {n11 + n01} * {n10 + n00} * {n01 + n00})
 = {numerator} / {denom:.4f}
 = {sim:.4f}
+Difference: -1 * sim = {-sim:.4f}
     """.strip()
 explain_mcc = explain_phi
 explain_matthews = explain_phi
@@ -69,10 +72,18 @@ sim_mcc = sim_phi
 sim_matthews = sim_phi
 
 
+@Metric
+def dif_phi(a, b, n_universe=None, **_) -> float:
+    return -sim_phi(a, b, n_universe=n_universe)
+dif_mcc = dif_phi
+dif_matthews = dif_phi
+
+
 METRICS['phi'] = {
     'class': 'set',
     'default': 'sim',
     'sim': sim_phi,
+    'dif': dif_phi,
     'info': info_phi,
     'explain': explain_phi,
 }
